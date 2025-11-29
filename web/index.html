@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Marex 21 – Control Panel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #050816;
+      color: #e5e7eb;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(circle at top left, rgba(59,130,246,0.12), transparent 55%),
+        radial-gradient(circle at bottom right, rgba(34,197,94,0.12), transparent 55%),
+        #020617;
+    }
+
+    /* LIGHT THEME */
+
+    body.light-theme {
+      background: radial-gradient(circle at top left, rgba(59,130,246,0.10), transparent 55%),
+                  radial-gradient(circle at bottom right, rgba(34,197,94,0.10), transparent 55%),
+                  #e5e7eb;
+      color: #020617;
+    }
+
+    .panel-frame {
+      width: 100%;
+      max-width: 1050px;
+      height: 90vh;
+      max-height: 820px;
+      padding: 14px;
+      background-image:
+        repeating-linear-gradient(45deg, #020617 0, #020617 2px, #030712 2px, #030712 4px);
+      border-radius: 18px;
+      box-shadow:
+        0 25px 60px rgba(0,0,0,0.8),
+        inset 0 0 0 1px rgba(148,163,184,0.25);
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+    }
+
+    body.light-theme .panel-frame {
+      background-image: none;
+      background: #e5e7eb;
+      box-shadow:
+        0 18px 40px rgba(15,23,42,0.3),
+        inset 0 0 0 1px rgba(148,163,184,0.35);
+    }
+
+    .panel-inner {
+      flex: 1;
+      border-radius: 12px;
+      background: #020617;
+      border: 1px solid #111827;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    body.light-theme .panel-inner {
+      background: #f9fafb;
+      border-color: #d1d5db;
+    }
+
+    /* TOP BAR */
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 12px;
+      background: #020617;
+      border-bottom: 1px solid #1f2937;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.45);
+    }
+
+    body.light-theme .top-bar {
+      background: #f9fafb;
+      border-bottom-color: #e5e7eb;
+      box-shadow: 0 2px 6px rgba(148,163,184,0.5);
+    }
+
+    .top-left {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .title-main {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #e5e7eb;
+    }
+    .title-sub {
+      font-size: 10px;
+      color: #9ca3af;
+    }
+    body.light-theme .title-main { color:#0f172a; }
+    body.light-theme .title-sub { color:#6b7280; }
+
+    .top-center {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .mode-pill {
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      border: 1px solid #1f2937;
+      background: #020617;
+      color: #9ca3af;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .mode-pill.active {
+      background:#16a34a;
+      color:#ecfdf5;
+      border-color:#16a34a;
+      box-shadow:0 0 0 1px rgba(22,163,74,0.4);
+    }
+    body.light-theme .mode-pill {
+      background:#f3f4f6;
+      border-color:#cbd5f5;
+      color:#4b5563;
+    }
+
+    .top-right {
+      text-align:right;
+      font-size:9px;
+      color:#9ca3af;
+    }
+    .top-right span { color:#e5e7eb; }
+    body.light-theme .top-right { color:#6b7280; }
+    body.light-theme .top-right span { color:#111827; }
+
+    /* TABS */
+
+    .tabs-bar {
+      display:flex;
+      padding:3px 8px;
+      background:#020617;
+      border-bottom:1px solid #111827;
+      gap:4px;
+      justify-content:center;
+    }
+    body.light-theme .tabs-bar {
+      background:#f9fafb;
+      border-bottom-color:#e5e7eb;
+    }
+
+    .tab-btn {
+      flex:0 0 auto;
+      min-width:90px;
+      padding:3px 8px;
+      border-radius:999px;
+      border:1px solid #1f2937;
+      background:#020617;
+      color:#9ca3af;
+      font-size:10px;
+      text-transform:uppercase;
+      letter-spacing:0.08em;
+      cursor:pointer;
+    }
+    .tab-btn.active {
+      background:#111827;
+      color:#e5e7eb;
+      border-color:#4b5563;
+    }
+    body.light-theme .tab-btn {
+      background:#f3f4f6;
+      border-color:#d1d5db;
+      color:#4b5563;
+    }
+    body.light-theme .tab-btn.active {
+      background:#111827;
+      color:#f9fafb;
+      border-color:#4b5563;
+    }
+
+    /* ALARM BANNER */
+
+    .alarm-banner {
+      margin: 4px 8px 0;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid #1f2937;
+      background: #020617;
+      color: #e5e7eb;
+    }
+    .alarm-banner-label {
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 10px;
+    }
+    .alarm-banner.ok {
+      border-color:#16a34a;
+      background:
+        radial-gradient(circle at left, rgba(34,197,94,0.25), transparent 55%),
+        #022c22;
+      color:#bbf7d0;
+    }
+    .alarm-banner.alarm {
+      border-color:#f97316;
+      background:
+        radial-gradient(circle at left, rgba(248,113,113,0.28), transparent 55%),
+        #450a0a;
+      color:#fee2e2;
+    }
+    body.light-theme .alarm-banner.ok {
+      background:#ecfdf5;
+      border-color:#bbf7d0;
+      color:#166534;
+    }
+    body.light-theme .alarm-banner.alarm {
+      background:#fef2f2;
+      border-color:#fecaca;
+      color:#7f1d1d;
+    }
+
+    /* PAGE / CARD */
+
+    .page-container {
+      flex:1;
+      padding:6px 8px 8px;
+      display:flex;
+      flex-direction:column;
+    }
+    .page { flex:1; display:none; }
+    .page.active { display:flex; flex-direction:column; }
+
+    .card {
+      background:#020617;
+      border-radius:10px;
+      border:1px solid #111827;
+      box-shadow:0 12px 30px rgba(0,0,0,0.65);
+      display:flex;
+      flex-direction:column;
+      flex:1;
+      overflow:hidden;
+    }
+    body.light-theme .card {
+      background:#ffffff;
+      border-color:#e5e7eb;
+      box-shadow:0 14px 32px rgba(15,23,42,0.25);
+    }
+
+    .card-header {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:5px 8px;
+      border-bottom:1px solid #111827;
+      background:#020617;
+      gap:4px;
+    }
+    body.light-theme .card-header {
+      background:#f9fafb;
+      border-bottom-color:#e5e7eb;
+    }
+
+    .card-title {
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:0.1em;
+      color:#9ca3af;
+    }
+    body.light-theme .card-title { color:#6b7280; }
+
+    .card-header-right {
+      font-size:10px;
+      color:#6b7280;
+      display:flex;
+      gap:4px;
+      align-items:center;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .card-body {
+      flex:1;
+      padding:5px 6px 6px;
+      display:flex;
+      flex-direction:column;
+      gap:5px;
+      overflow:hidden;
+    }
+
+    .small-btn {
+      font-size:9px;
+      border-radius:999px;
+      border:1px solid #374151;
+      background:#020617;
+      color:#e5e7eb;
+      padding:2px 7px;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    .small-btn:hover { background:#111827; }
+    body.light-theme .small-btn {
+      background:#111827;
+      border-color:#111827;
+      color:#f9fafb;
+    }
+
+    /* SCENES */
+
+    .scene-row {
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:4px;
+      margin-bottom:3px;
+    }
+    .scene-btn {
+      padding:4px 4px;
+      border-radius:7px;
+      border:1px solid #111827;
+      background:#020617;
+      color:#e5e7eb;
+      font-size:9px;
+      cursor:pointer;
+      display:flex;
+      flex-direction:column;
+      gap:1px;
+      box-shadow:0 4px 10px rgba(0,0,0,0.5);
+    }
+    body.light-theme .scene-btn {
+      background:#ffffff;
+      border-color:#e5e7eb;
+      color:#111827;
+      box-shadow:0 4px 10px rgba(15,23,42,0.15);
+    }
+    .scene-name {
+      font-weight:500;
+      letter-spacing:0.06em;
+      text-transform:uppercase;
+    }
+    .scene-desc {
+      font-size:9px;
+      color:#9ca3af;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    body.light-theme .scene-desc { color:#6b7280; }
+
+    /* DEVICE GRID – 3 columns, minimal tiles */
+
+    .device-grid {
+      flex:1;
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:4px;
+    }
+    @media (max-width:900px) {
+      .device-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    }
+    @media (max-width:600px) {
+      .device-grid { grid-template-columns:1fr; }
+    }
+
+    .device-card {
+      border-radius:7px;
+      border:1px solid #111827;
+      background:#020617;
+      padding:3px 4px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      min-height:34px;
+    }
+    body.light-theme .device-card {
+      background:#ffffff;
+      border-color:#e5e7eb;
+    }
+
+    .device-name {
+      font-size:11px;
+      font-weight:500;
+      color:#e5e7eb;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      margin-right:4px;
+    }
+    body.light-theme .device-name { color:#111827; }
+
+    .state-pill {
+      min-width:46px;
+      text-align:center;
+      padding:2px 6px;
+      border-radius:999px;
+      font-size:10px;
+      border:1px solid #374151;
+      background:#111827;
+    }
+    .state-pill.on {
+      background:#16a34a;
+      border-color:#16a34a;
+      color:#ecfdf5;
+      box-shadow:0 0 0 1px rgba(22,163,74,0.5);
+    }
+    .state-pill.off {
+      background:#020617;
+      border-color:#4b5563;
+      color:#9ca3af;
+    }
+    .state-pill.btn-like {
+      cursor:pointer;
+      user-select:none;
+      transition:transform 0.05s ease, box-shadow 0.05s ease, background 0.1s ease;
+    }
+    .state-pill.btn-like:active {
+      transform:translateY(1px);
+      box-shadow:none;
+    }
+    body.light-theme .state-pill.off {
+      background:#f3f4f6;
+      border-color:#d1d5db;
+      color:#4b5563;
+    }
+
+    /* SENSORS */
+
+    .sensors-list {
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+      gap:4px;
+    }
+    .sensor-item {
+      padding:4px 5px;
+      border-radius:6px;
+      border:1px solid #111827;
+      background:#020617;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:4px;
+    }
+    body.light-theme .sensor-item {
+      background:#ffffff;
+      border-color:#e5e7eb;
+    }
+    .sensor-main {
+      display:flex;
+      flex-direction:column;
+      gap:1px;
+    }
+    .sensor-name {
+      font-size:11px;
+      font-weight:500;
+      color:#e5e7eb;
+    }
+    body.light-theme .sensor-name { color:#111827; }
+    .sensor-meta {
+      font-size:10px;
+      color:#6b7280;
+    }
+    .sensor-state {
+      font-size:10px;
+      padding:4px 6px;
+      border-radius:999px;
+      border:1px solid #1f2937;
+      min-width:56px;
+      text-align:center;
+      background:#020617;
+      color:#9ca3af;
+    }
+    .sensor-state.on {
+      border-color:#22c55e;
+      color:#bbf7d0;
+    }
+    .sensor-state.alarm {
+      border-color:#f97316;
+      color:#fed7aa;
+    }
+    body.light-theme .sensor-state {
+      background:#f9fafb;
+      border-color:#d1d5db;
+      color:#374151;
+    }
+
+    /* EVENTS / ALARMS */
+
+    .events-list { font-size:10px; }
+    .event-item {
+      padding:3px 4px;
+      border-bottom:1px dotted #1f2937;
+    }
+    body.light-theme .event-item { border-bottom-color:#e5e7eb; }
+    .event-meta { color:#6b7280; font-size:10px; }
+    .event-type { color:#a5b4fc; font-weight:500; }
+    .event-details {
+      font-size:10px;
+      color:#9ca3af;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    body.light-theme .event-details { color:#6b7280; }
+
+    .alarm-tag {
+      display:inline-block;
+      margin-left:4px;
+      padding:1px 4px;
+      border-radius:999px;
+      font-size:9px;
+      background:#7f1d1d;
+      color:#fee2e2;
+      border:1px solid #b91c1c;
+    }
+    body.light-theme .alarm-tag {
+      background:#fee2e2;
+      color:#7f1d1d;
+      border-color:#fecaca;
+    }
+  </style>
+</head>
+<body class="dark-theme">
+  <div class="panel-frame">
+    <div class="panel-inner">
+      <!-- TOP BAR -->
+      <div class="top-bar">
+        <div class="top-left">
+          <div class="title-main">Marex Flexi 21</div>
+          <div class="title-sub">Yacht ID: <span id="yachtName">marex-21-001</span></div>
+        </div>
+        <div class="top-center">
+          <button class="mode-pill" data-scene="underway">Underway</button>
+          <button class="mode-pill" data-scene="at_anchor">At Anchor</button>
+          <button class="mode-pill" data-scene="harbour_mode">Harbour</button>
+        </div>
+        <div class="top-right">
+          API: <span id="apiBase">/</span><br/>
+          Last: <span id="lastAction">none</span><br/>
+          <button id="themeToggleBtn" class="small-btn">Light mode</button>
+        </div>
+      </div>
+
+      <!-- TABS -->
+      <div class="tabs-bar">
+        <button class="tab-btn active" data-page="controls">Controls</button>
+        <button class="tab-btn" data-page="status">Status & Tests</button>
+        <button class="tab-btn" data-page="events">Events</button>
+        <button class="tab-btn" data-page="alarms">Alarms</button>
+      </div>
+
+      <!-- ALARM BANNER -->
+      <div id="alarmBanner" class="alarm-banner ok">
+        <span class="alarm-banner-label">Alarms</span>
+        <span id="alarmBannerText">No active alarms.</span>
+      </div>
+
+      <!-- PAGES -->
+      <div class="page-container">
+        <!-- CONTROLS -->
+        <div class="page active" id="page-controls">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Controls</div>
+              <div class="card-header-right">
+                <span id="summaryLine">–</span>
+                <button id="refreshDevicesBtn" class="small-btn">Refresh</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="sceneButtons" class="scene-row"></div>
+              <div id="deviceContainer" class="device-grid"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STATUS -->
+        <div class="page" id="page-status">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Status & Tests</div>
+              <div class="card-header-right">
+                <button id="refreshSensorsBtn" class="small-btn">Refresh</button>
+                <button id="bilgeTestBtn" class="small-btn">Bilge Test</button>
+                <button id="batteryTestBtn" class="small-btn">Battery Test</button>
+                <button id="fuelTestBtn" class="small-btn">Fuel Low Test</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="sensorContainer" class="sensors-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- EVENTS -->
+        <div class="page" id="page-events">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Events</div>
+              <div class="card-header-right">
+                <button id="refreshEventsBtn" class="small-btn">Refresh</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="eventsList" class="events-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ALARMS PAGE -->
+        <div class="page" id="page-alarms">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Alarm History</div>
+              <div class="card-header-right">
+                <button id="refreshAlarmsBtn" class="small-btn">Refresh</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="alarmsList" class="events-list"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const yachtId = "marex-21-001";
+    const apiBase = "";
+
+    const READONLY_IDS = new Set([
+      "helm_anchor_scene_button",
+      "helm_night_scene_button"
+    ]);
+
+    const ALARM_IDS = new Set([
+      "bilge_float_high",
+      "battery_low_alarm"
+    ]);
+
+    const deviceContainer  = document.getElementById("deviceContainer");
+    const sceneButtons     = document.getElementById("sceneButtons");
+    const sensorContainer  = document.getElementById("sensorContainer");
+    const eventsList       = document.getElementById("eventsList");
+    const alarmsList       = document.getElementById("alarmsList");
+    const lastActionEl     = document.getElementById("lastAction");
+    const summaryLineEl    = document.getElementById("summaryLine");
+    const themeToggleBtn   = document.getElementById("themeToggleBtn");
+    const alarmBanner      = document.getElementById("alarmBanner");
+    const alarmBannerText  = document.getElementById("alarmBannerText");
+
+    document.getElementById("apiBase").textContent  = window.location.origin;
+    document.getElementById("yachtName").textContent = yachtId;
+
+    /* THEME */
+
+    let currentTheme = localStorage.getItem("ams_theme") || "dark";
+    document.body.classList.remove("dark-theme","light-theme");
+    document.body.classList.add(currentTheme + "-theme");
+    updateThemeButtonLabel();
+
+    themeToggleBtn.addEventListener("click", () => {
+      currentTheme = currentTheme === "dark" ? "light" : "dark";
+      document.body.classList.remove("dark-theme","light-theme");
+      document.body.classList.add(currentTheme + "-theme");
+      localStorage.setItem("ams_theme", currentTheme);
+      updateThemeButtonLabel();
+    });
+
+    function updateThemeButtonLabel() {
+      themeToggleBtn.textContent = currentTheme === "dark" ? "Light mode" : "Dark mode";
+    }
+
+    /* TABS */
+
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const page = btn.getAttribute("data-page");
+        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+        document.getElementById("page-" + page).classList.add("active");
+      });
+    });
+
+    /* MODE BUTTONS */
+
+    document.querySelectorAll(".mode-pill").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const sceneId = btn.getAttribute("data-scene");
+        activateScene(sceneId, btn.textContent.trim());
+        document.querySelectorAll(".mode-pill").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+      });
+    });
+
+    /* HEADER BUTTONS */
+
+    document.getElementById("refreshDevicesBtn").addEventListener("click", () => {
+      loadDevices();
+      loadScenes();
+    });
+    document.getElementById("refreshSensorsBtn").addEventListener("click", loadDevices);
+    document.getElementById("refreshEventsBtn").addEventListener("click", loadEvents);
+    document.getElementById("refreshAlarmsBtn").addEventListener("click", loadAlarmEvents);
+
+    document.getElementById("bilgeTestBtn").addEventListener("click", runBilgeTest);
+    document.getElementById("batteryTestBtn").addEventListener("click", runBatteryTest);
+    document.getElementById("fuelTestBtn").addEventListener("click", runFuelTest);
+
+    function setLastAction(text) {
+      const now = new Date();
+      lastActionEl.textContent = `${text} @ ${now.toLocaleTimeString()}`;
+    }
+
+    /* DEVICES & SENSORS */
+
+    async function loadDevices() {
+      try {
+        const res = await fetch(`${apiBase}/yachts/${yachtId}/devices/`);
+        if (!res.ok) throw new Error("Failed to load devices");
+        const devices = await res.json();
+        renderDevices(devices);
+        renderSensors(devices);
+        updateSummary(devices);
+        updateAlarmBanner(devices);
+        setLastAction("Devices refreshed");
+      } catch (err) {
+        console.error(err);
+        setLastAction("Error loading devices");
+      }
+    }
+
+    function updateSummary(devices) {
+      const controllable = devices.filter(d => d.type !== "sensor" && !READONLY_IDS.has(d.id));
+      const onCount  = controllable.filter(d => d.state === true).length;
+      const pumpsOn  = controllable.filter(d => d.type === "pump" && d.state === true).length;
+      const lightsOn = controllable.filter(d => d.type === "light" && d.state === true).length;
+      summaryLineEl.textContent = `${onCount} outputs ON · ${lightsOn} lights · ${pumpsOn} pumps`;
+    }
+
+    function renderDevices(devices) {
+      deviceContainer.innerHTML = "";
+
+      const controls = devices
+        .filter(dev => dev.type !== "sensor" && !READONLY_IDS.has(dev.id))
+        .sort((a, b) => {
+          if (a.zone === b.zone) return a.name.localeCompare(b.name);
+          return a.zone.localeCompare(b.zone);
+        });
+
+      controls.forEach(dev => {
+        const card = document.createElement("div");
+        card.className = "device-card";
+
+        const nameEl = document.createElement("div");
+        nameEl.className = "device-name";
+        nameEl.textContent = dev.name;
+
+        const isOn = dev.state === true;
+        const statePill = document.createElement("div");
+        statePill.className = "state-pill btn-like " + (isOn ? "on" : "off");
+        statePill.textContent = isOn ? "ON" : "OFF";
+        statePill.addEventListener("click", () => {
+          setDeviceState(dev.id, !isOn);
+        });
+
+        card.appendChild(nameEl);
+        card.appendChild(statePill);
+        deviceContainer.appendChild(card);
+      });
+    }
+
+    function renderSensors(devices) {
+      sensorContainer.innerHTML = "";
+
+      const sensors = devices.filter(dev =>
+        dev.type === "sensor" || READONLY_IDS.has(dev.id)
+      );
+
+      if (sensors.length === 0) {
+        sensorContainer.textContent = "No sensors configured.";
+        return;
+      }
+
+      sensors
+        .sort((a, b) => {
+          if (a.zone === b.zone) return a.name.localeCompare(b.name);
+          return a.zone.localeCompare(b.zone);
+        })
+        .slice(0, 16)
+        .forEach(dev => {
+          const item = document.createElement("div");
+          item.className = "sensor-item";
+
+          const main = document.createElement("div");
+          main.className = "sensor-main";
+
+          const name = document.createElement("div");
+          name.className = "sensor-name";
+          name.textContent = dev.name;
+
+          const meta = document.createElement("div");
+          meta.className = "sensor-meta";
+          meta.textContent = `${dev.zone} · ${dev.id}`;
+
+          main.appendChild(name);
+          main.appendChild(meta);
+
+          const state = document.createElement("div");
+          state.className = "sensor-state";
+
+          let text = "–";
+          if (dev.state === true) {
+            text = "ON";
+            state.classList.add("on");
+          } else if (dev.state === false) {
+            text = "OFF";
+          } else if (dev.state !== null && dev.state !== undefined) {
+            text = String(dev.state);
+          }
+
+          if (dev.id.includes("bilge") || dev.id.includes("battery_low")) {
+            if (dev.state === true) state.classList.add("alarm");
+          }
+
+          state.textContent = text;
+
+          item.appendChild(main);
+          item.appendChild(state);
+          sensorContainer.appendChild(item);
+        });
+    }
+
+    async function setDeviceState(deviceId, newState) {
+      try {
+        const res = await fetch(`${apiBase}/yachts/${yachtId}/devices/${deviceId}/state`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ state: newState, source: "web_ui" })
+        });
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`Failed to set state: ${errText}`);
+        }
+        setLastAction(`Set ${deviceId} → ${newState ? "ON" : "OFF"}`);
+        await loadDevices();
+        await loadEvents();
+        await loadAlarmEvents();
+      } catch (err) {
+        console.error(err);
+        setLastAction(`Error setting ${deviceId}`);
+      }
+    }
+
+    async function setSensorValue(deviceId, value) {
+      try {
+        const res = await fetch(`${apiBase}/yachts/${yachtId}/devices/${deviceId}/state`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ state: value, source: "web_ui_test" })
+        });
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`Failed to set sensor value: ${errText}`);
+        }
+        await loadDevices();
+        await loadEvents();
+        await loadAlarmEvents();
+      } catch (err) {
+        console.error(err);
+        setLastAction(`Error setting ${deviceId}`);
+      }
+    }
+
+    /* ALARM BANNER LOGIC */
+
+    function updateAlarmBanner(devices) {
+      const active = devices.filter(
+        d => ALARM_IDS.has(d.id) && d.state === true
+      );
+
+      alarmBanner.classList.remove("ok","alarm");
+
+      if (active.length === 0) {
+        alarmBanner.classList.add("ok");
+        alarmBannerText.textContent = "No active alarms.";
+      } else {
+        alarmBanner.classList.add("alarm");
+        const names = active.map(d => d.name || d.id).join(" · ");
+        alarmBannerText.textContent = names;
+      }
+    }
+
+    /* TESTS */
+
+    function pulseDevice(deviceId, durationMs = 5000) {
+      setDeviceState(deviceId, true);
+      setLastAction(`TEST: ${deviceId} ON`);
+      setTimeout(() => setDeviceState(deviceId, false), durationMs);
+    }
+
+    function runBilgeTest() {
+      pulseDevice("bilge_float_high", 5000);
+      pulseDevice("bilge_float_auto", 5000);
+    }
+
+    function runBatteryTest() {
+      pulseDevice("battery_low_alarm", 5000);
+    }
+
+    function runFuelTest() {
+      setSensorValue("fuel_tank_level", 10);
+      setLastAction("Fuel level test → 10");
+      setTimeout(() => setSensorValue("fuel_tank_level", 60), 8000);
+    }
+
+    /* SCENES */
+
+    async function loadScenes() {
+      try {
+        const res = await fetch(`${apiBase}/yachts/${yachtId}/scenes`);
+        if (!res.ok) throw new Error("Failed to load scenes");
+        const scenes = await res.json();
+        renderScenes(scenes);
+      } catch (err) {
+        console.error(err);
+        setLastAction("Error loading scenes");
+      }
+    }
+
+    function renderScenes(scenes) {
+      sceneButtons.innerHTML = "";
+      scenes.forEach(scene => {
+        const btn = document.createElement("button");
+        btn.className = "scene-btn";
+        btn.addEventListener("click", () => activateScene(scene.id, scene.name));
+
+        const name = document.createElement("div");
+        name.className = "scene-name";
+        name.textContent = scene.name;
+
+        const desc = document.createElement("div");
+        desc.className = "scene-desc";
+        desc.textContent = scene.description || scene.id;
+
+        btn.appendChild(name);
+        btn.appendChild(desc);
+        sceneButtons.appendChild(btn);
+      });
+    }
+
+    async function activateScene(sceneId, sceneName) {
+      try {
+        const res = await fetch(`${apiBase}/yachts/${yachtId}/scenes/${sceneId}/activate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ source: "web_ui" })
+        });
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`Failed to activate scene: ${errText}`);
+        }
+        setLastAction(`Scene: ${sceneName}`);
+        await loadDevices();
+        await loadEvents();
+        await loadAlarmEvents();
+      } catch (err) {
+        console.error(err);
+        setLastAction(`Error activating scene: ${sceneName}`);
+      }
+    }
+
+    /* EVENTS */
+
+    async function loadEvents() {
+      try {
+        const res = await fetch(`${apiBase}/yachts/${yachtId}/events?limit=50`);
+        if (!res.ok) throw new Error("Failed to load events");
+        const events = await res.json();
+        renderEvents(events);
+      } catch (err) {
+        console.error(err);
+        setLastAction("Error loading events");
+      }
+    }
+
+    function renderEvents(events) {
+      eventsList.innerHTML = "";
+      events.slice(0, 15).forEach(ev => {
+        const item = document.createElement("div");
+        item.className = "event-item";
+
+        const ts = new Date(ev.timestamp).toLocaleTimeString();
+
+        const meta = document.createElement("div");
+        meta.className = "event-meta";
+        meta.innerHTML = `<span class="event-type">${ev.type}</span> · ${ts} · ${ev.source}`;
+
+        const details = document.createElement("div");
+        details.className = "event-details";
+        details.textContent = JSON.stringify(ev.details);
+
+        item.appendChild(meta);
+        item.appendChild(details);
+        eventsList.appendChild(item);
+      });
+    }
+
+    /* ALARM HISTORY */
+
+    function isAlarmEvent(ev) {
+      const typeStr = (ev.type || "").toLowerCase();
+      const detailStr = JSON.stringify(ev.details || {}).toLowerCase();
+      const srcStr = (ev.source || "").toLowerCase();
+      const haystack = `${typeStr} ${detailStr} ${srcStr}`;
+
+      if (haystack.includes("alarm")) return true;
+      if (haystack.includes("bilge")) return true;
+      if (haystack.includes("battery_low") || haystack.includes("battery low")) return true;
+      if (haystack.includes("fuel") && haystack.includes("low")) return true;
+
+      return false;
+    }
+
+    async function loadAlarmEvents() {
+      try {
+        const res = await fetch(`${apiBase}/yachts/${yachtId}/events?limit=200`);
+        if (!res.ok) throw new Error("Failed to load alarm events");
+        const events = await res.json();
+        const alarms = events.filter(isAlarmEvent);
+        renderAlarmEvents(alarms);
+      } catch (err) {
+        console.error(err);
+        setLastAction("Error loading alarm history");
+      }
+    }
+
+    function renderAlarmEvents(alarms) {
+      alarmsList.innerHTML = "";
+      if (!alarms || alarms.length === 0) {
+        alarmsList.textContent = "No alarm events in recent history.";
+        return;
+      }
+
+      alarms
+        .slice(0, 40)
+        .forEach(ev => {
+          const item = document.createElement("div");
+          item.className = "event-item";
+
+          const ts = new Date(ev.timestamp).toLocaleString();
+
+          const meta = document.createElement("div");
+          meta.className = "event-meta";
+
+          const typeLabel = document.createElement("span");
+          typeLabel.className = "event-type";
+          typeLabel.textContent = ev.type;
+
+          const alarmTag = document.createElement("span");
+          alarmTag.className = "alarm-tag";
+          alarmTag.textContent = "ALARM";
+
+          meta.appendChild(typeLabel);
+          meta.appendChild(alarmTag);
+          meta.insertAdjacentText("beforeend", ` · ${ts} · ${ev.source}`);
+
+          const details = document.createElement("div");
+          details.className = "event-details";
+          details.textContent = JSON.stringify(ev.details);
+
+          item.appendChild(meta);
+          item.appendChild(details);
+          alarmsList.appendChild(item);
+        });
+    }
+
+    /* INIT */
+
+    (async function init() {
+      await loadDevices();
+      await loadScenes();
+      await loadEvents();
+      await loadAlarmEvents();
+      setLastAction("UI ready");
+    })();
+  </script>
+</body>
+</html>
