@@ -1,6 +1,7 @@
-# ai.py
+# app/routers/ai.py
 
 import os
+import asyncio
 from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
 
@@ -24,6 +25,9 @@ client = OpenAI()
 # In-memory AI logs: yacht_id -> list[dict]
 AI_LOGS: Dict[str, List[Dict[str, Any]]] = {}
 
+# In-memory occupancy state: yacht_id -> "onboard" | "unattended"
+OCCUPANCY: Dict[str, str] = {}
+
 
 # ---------- Models ----------
 
@@ -45,6 +49,10 @@ class AIWatchLogIn(BaseModel):
 class AIWatchLogOut(AIWatchLogIn):
     id: str
 
+
+class AIOccupancyUpdate(BaseModel):
+    # Expected values: "onboard" or "unattended"
+    occupancy: str = Field(..., pattern="^(onboard|unattended)$")
 
 # ---------- Helpers ----------
 
@@ -68,26 +76,39 @@ async def state_snapshot(yacht_id: str):
     Aggregate current state for the AI watchkeeper:
 
     - devices: from /yachts/{id}/devices/
-    - scenes:  from /yachts/{id}/scenes/
-    - events:  from /yachts/{id}/events?limit=50
+    - scenes: from /yachts/{id}/scenes/
+    - events: from /yachts/{id}/events?limit=50
 
     This keeps everything going through the existing device/event logic.
+
+    Also includes:
+    - occupancy: "onboard" | "unattended" | "unknown"
     """
     async with httpx.AsyncClient(base_url=INTERNAL_BASE_URL, timeout=5.0) as http:
-        devices, scenes, events = await httpx.AsyncClient.gather(
-            _fetch_json(http, "GET", f"/yachts/{yacht_id}/devices/"),
-            _fetch_json(http, "GET", f"/yachts/{yacht_id}/scenes/"),
-            _fetch_json(http, "GET", f"/yachts/{yacht_id}/events/", params={"limit": 50}),
+        devices_task = _fetch_json(http, "GET", f"/yachts/{yacht_id}/devices/")
+        scenes_task = _fetch_json(http, "GET", f"/yachts/{yacht_id}/scenes/")
+        events_task = _fetch_json(
+            http,
+            "GET",
+            f"/yachts/{yacht_id}/events/",
+            params={"limit": 50},
         )
 
+        devices, scenes, events = await asyncio.gather(
+            devices_task, scenes_task, events_task
+        )
+
+    occupancy = OCCUPANCY.get(yacht_id, "unknown")
+
     return {
-      "yacht": {
-        "id": yacht_id,
-        "name": yacht_id.replace("-", " ").title(),
-      },
-      "devices": devices,
-      "scenes": scenes,
-      "events": events,
+        "yacht": {
+            "id": yacht_id,
+            "name": yacht_id.replace("-", " ").title(),
+        },
+        "devices": devices,
+        "scenes": scenes,
+        "events": events,
+        "occupancy": occupancy,
     }
 
 
@@ -98,7 +119,6 @@ async def add_ai_log(yacht_id: str, log: AIWatchLogIn):
     and the raw actions. Stored in-memory and used by the UI.
     """
     log_list = _init_log_list(yacht_id)
-
     log_id = f"log-{len(log_list) + 1:04d}"
     out = {
         "id": log_id,
@@ -139,7 +159,10 @@ async def ai_chat(yacht_id: str, body: AIChatRequest):
     async with httpx.AsyncClient(base_url=INTERNAL_BASE_URL, timeout=5.0) as http:
         devices = await _fetch_json(http, "GET", f"/yachts/{yacht_id}/devices/")
         events = await _fetch_json(
-            http, "GET", f"/yachts/{yacht_id}/events/", params={"limit": 10}
+            http,
+            "GET",
+            f"/yachts/{yacht_id}/events/",
+            params={"limit": 10},
         )
 
     # Keep context reasonably small
@@ -153,6 +176,7 @@ async def ai_chat(yacht_id: str, body: AIChatRequest):
         }
         for d in devices[:20]
     ]
+
     simple_events = [
         {
             "timestamp": e.get("timestamp"),
@@ -163,16 +187,21 @@ async def ai_chat(yacht_id: str, body: AIChatRequest):
         for e in events[:10]
     ]
 
+    occupancy = OCCUPANCY.get(yacht_id, "unknown")
+
     system_prompt = (
         "You are the AI watchkeeper for a small yacht.\n"
         "- Be concise and practical.\n"
-        "- You can use the current device states and recent events to answer questions.\n"
+        "- You can use the current device states, occupancy state, and recent events to answer questions.\n"
+        "- occupancy='onboard' means someone is on the boat, so avoid over-automation of comfort devices.\n"
+        "- occupancy='unattended' means no one is aboard; you may be proactive about safety and power saving.\n"
         "- If the user asks for instructions, keep them simple and safety-focused.\n"
         "- If you don't know something, say so and avoid guessing.\n"
     )
 
     context_blob = {
         "yacht_id": yacht_id,
+        "occupancy": occupancy,
         "devices": simple_devices,
         "recent_events": simple_events,
     }
@@ -198,6 +227,25 @@ async def ai_chat(yacht_id: str, body: AIChatRequest):
 
     reply_text = completion.choices[0].message.content.strip()
     return AIChatResponse(reply=reply_text)
+
+
+@router.post("/occupancy")
+async def set_occupancy(yacht_id: str, body: AIOccupancyUpdate):
+    """
+    Called by the UI toggle (Onboard / Unattended).
+
+    Stores occupancy in-memory per yacht:
+    - 'onboard'   -> someone is on the boat
+    - 'unattended'-> boat is empty, AI can fully manage non-critical systems
+    """
+    OCCUPANCY[yacht_id] = body.occupancy
+    now = datetime.now(timezone.utc).isoformat()
+    return {
+        "status": "ok",
+        "yacht_id": yacht_id,
+        "occupancy": body.occupancy,
+        "updated_at": now,
+    }
 
 
 # Small helper to keep JSON compact in prompts

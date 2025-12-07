@@ -5,7 +5,7 @@ import asyncio
 import uuid
 import json
 from datetime import datetime, timezone, timedelta
-from typing import Dict, Optional, List, Any
+from typing import Dict, Optional, List
 
 import httpx
 from openai import OpenAI
@@ -39,11 +39,7 @@ bilge_last_forced_by_ai: bool = False               # did AI last control overri
 sensor_latches: Dict[str, datetime] = {}
 
 
-def get_sensor_state_with_latch(
-    device_id: str,
-    device: Optional[dict],
-    hold_seconds: int = 60
-) -> bool:
+def get_sensor_state_with_latch(device_id: str, device: Optional[dict], hold_seconds: int = 60) -> bool:
     """
     For tests and noisy signals, treat a sensor as TRUE for `hold_seconds`
     after the last time we saw it True.
@@ -74,17 +70,17 @@ def get_sensor_state_with_latch(
     return False
 
 
-async def fetch_snapshot(http: httpx.AsyncClient) -> dict:
+async def fetch_snapshot(http: httpx.AsyncClient):
     url = f"{BACKEND_BASE_URL}/yachts/{YACHT_ID}/ai/state_snapshot"
     resp = await http.get(url, timeout=5.0)
     resp.raise_for_status()
     return resp.json()
 
 
-async def send_ai_commands(http: httpx.AsyncClient, payload: dict) -> dict:
+async def send_ai_commands(http: httpx.AsyncClient, payload: dict):
     """
     APPLY actions directly via /devices/.../state and /scenes/.../activate,
-    instead of posting the whole payload to /ai/commands (which was giving 422).
+    instead of posting the whole payload to /ai/commands.
     """
     actions = payload.get("actions", []) or []
     applied = 0
@@ -93,54 +89,56 @@ async def send_ai_commands(http: httpx.AsyncClient, payload: dict) -> dict:
     errors: List[str] = []
 
     for action in actions:
-      a_type = action.get("type")
+        a_type = action.get("type")
 
-      if a_type == "set_device_state":
-          device_id = action.get("device_id")
-          if not device_id:
-              skipped += 1
-              continue
+        if a_type == "set_device_state":
+            device_id = action.get("device_id")
+            if not device_id:
+                skipped += 1
+                continue
 
-          target_state = action.get("target_state")
-          url = f"{BACKEND_BASE_URL}/yachts/{YACHT_ID}/devices/{device_id}/state"
-          body = {
-              "state": target_state,
-              "source": "ai_watchkeeper",
-          }
-          try:
-              resp = await http.post(url, json=body, timeout=5.0)
-              resp.raise_for_status()
-              applied += 1
-          except Exception as e:
-              failed += 1
-              errors.append(f"{device_id}: {e}")
+            target_state = action.get("target_state")
+            url = f"{BACKEND_BASE_URL}/yachts/{YACHT_ID}/devices/{device_id}/state"
+            body = {
+                "state": target_state,
+                "source": "ai_watchkeeper",
+            }
+            try:
+                resp = await http.post(url, json=body, timeout=5.0)
+                resp.raise_for_status()
+                applied += 1
+            except Exception as e:
+                failed += 1
+                errors.append(f"{device_id}: {e}")
 
-      elif a_type == "activate_scene":
-          scene_id = action.get("scene_id") or action.get("device_id")
-          if not scene_id:
-              skipped += 1
-              continue
+        elif a_type == "activate_scene":
+            scene_id = action.get("scene_id") or action.get("device_id")
+            if not scene_id:
+                skipped += 1
+                continue
 
-          url = f"{BACKEND_BASE_URL}/yachts/{YACHT_ID}/scenes/{scene_id}/activate"
-          body = {"source": "ai_watchkeeper"}
-          try:
-              resp = await http.post(url, json=body, timeout=5.0)
-              resp.raise_for_status()
-              applied += 1
-          except Exception as e:
-              failed += 1
-              errors.append(f"scene {scene_id}: {e}")
+            url = f"{BACKEND_BASE_URL}/yachts/{YACHT_ID}/scenes/{scene_id}/activate"
+            body = {"source": "ai_watchkeeper"}
+            try:
+                resp = await http.post(url, json=body, timeout=5.0)
+                resp.raise_for_status()
+                applied += 1
+            except Exception as e:
+                failed += 1
+                errors.append(f"scene {scene_id}: {e}")
 
-      elif a_type == "no_op":
-          skipped += 1
-      else:
-          # Unknown action type – ignore
-          skipped += 1
+        elif a_type == "no_op":
+            skipped += 1
+
+        else:
+            # Unknown action type – ignore
+            skipped += 1
 
     if failed:
         # Raise one combined error so loop_once logs it, but AFTER trying all actions
         raise RuntimeError(f"{failed} actions failed: {', '.join(errors)}")
 
+    # Return a small summary (loop_once just prints it)
     return {
         "applied": applied,
         "skipped": skipped,
@@ -175,18 +173,31 @@ def infer_mode(snapshot: dict) -> str:
     return "in_port"
 
 
+def get_occupancy(snapshot: dict) -> str:
+    """
+    Read occupancy from snapshot['occupancy'] if present,
+    else fall back to 'unknown'.
+    """
+    return snapshot.get("occupancy", "unknown") or "unknown"
+
+
 def build_prompt(snapshot: dict) -> str:
     """
     System prompt defining the model's high-level behaviour.
-    The snapshot JSON we send to you will include a 'mode' field inferred as:
-    - 'anchor'
-    - 'underway'
-    - 'in_port'
+
+    The snapshot JSON we send to you will include:
+    - 'mode' field inferred as: 'anchor', 'underway', or 'in_port'.
+    - 'occupancy' field: 'onboard', 'unattended', or 'unknown'.
     """
     return (
         "You are an AI watchkeeper for a small yacht.\n"
-        "- Input is JSON with devices, alarms, events, and mode.\n"
-        "- The JSON will include a 'mode' field (e.g. 'anchor', 'underway', 'in_port').\n"
+        "- Input is JSON with devices, alarms, events, mode and occupancy.\n"
+        "- 'mode' reflects vessel status: 'anchor', 'underway', or 'in_port'.\n"
+        "- 'occupancy' reflects whether people are on board:\n"
+        "    * 'onboard'    -> crew/guests present; be conservative, avoid micro-managing\n"
+        "                      comfort lighting and non-critical devices unless safety is at risk.\n"
+        "    * 'unattended' -> nobody aboard; you may take full control of safety-related devices\n"
+        "                      and reasonable lighting to indicate status and conserve power.\n"
         "- You must obey COLREGs for navigation/anchor lights based on mode.\n"
         "  * mode='anchor': anchor light ON, navigation lights OFF.\n"
         "  * mode='underway': navigation lights ON, anchor light OFF.\n"
@@ -195,11 +206,11 @@ def build_prompt(snapshot: dict) -> str:
         "- Only ever touch devices and scenes that are clearly related to safety or lighting.\n"
         "- If no action is needed, return a single 'no_op' action.\n"
         "- Output MUST be a JSON object with an 'actions' array.\n"
-        "- Each action should have: action_id, type, device_id or scene_id, target_state, "
-        "priority, constraints, reason.\n"
+        "- Each action should have: action_id, type, device_id or scene_id, target_state,\n"
+        "  priority, constraints, reason.\n"
         "- Don't invent device IDs or scene IDs; only use what is in the snapshot.\n"
-        "- Do NOT issue any actions that change the state of 'bilge_pump_auto_override'. "
-        "That device is controlled by deterministic safety rules outside of your control.\n"
+        "- Do NOT issue any actions that change the state of 'bilge_pump_auto_override'.\n"
+        "  That device is controlled by deterministic safety rules outside of your control.\n"
         "- You may still suggest actions for lighting or other safety-related devices.\n"
     )
 
@@ -216,6 +227,7 @@ def filter_model_bilge_actions(payload: dict) -> None:
             a.get("type") == "set_device_state"
             and a.get("device_id") == "bilge_pump_auto_override"
         ):
+            # Drop it
             continue
         filtered.append(a)
     payload["actions"] = filtered
@@ -225,6 +237,10 @@ def enforce_nav_light_rules(snapshot: dict, payload: dict) -> dict:
     """
     Hard COLREGs rules around anchor_light and nav_lights,
     on top of whatever the model suggests.
+
+    - Uses inferred mode from current snapshot.
+    - Only acts on lights where ai_control is truthy.
+    - Avoids fighting manual control if ai_control is False/empty.
     """
     devices = snapshot.get("devices", [])
     actions = payload.get("actions", [])
@@ -237,7 +253,6 @@ def enforce_nav_light_rules(snapshot: dict, payload: dict) -> dict:
         return bool(dev and dev.get("state") is True)
 
     def ai_allowed(dev: Optional[dict]) -> bool:
-        # We treat any non-empty ai_control as truthy "allowed/limited"
         return bool(dev and dev.get("ai_control"))
 
     anchor = find("anchor_light")
@@ -340,6 +355,8 @@ def enforce_nav_light_rules(snapshot: dict, payload: dict) -> dict:
                 }
             )
 
+    # in_port: we don't force anything, just let the model decide (plus your manual control)
+
     payload["actions"] = actions
     return payload
 
@@ -352,8 +369,9 @@ def drop_idempotent_actions(snapshot: dict, payload: dict) -> dict:
     devices = snapshot.get("devices", [])
     dev_map = {d.get("id"): d for d in devices if d.get("id")}
 
-    filtered: List[dict] = []
+    filtered = []
     for a in payload.get("actions", []):
+        # Only apply this optimisation to set_device_state
         if a.get("type") != "set_device_state":
             filtered.append(a)
             continue
@@ -367,10 +385,13 @@ def drop_idempotent_actions(snapshot: dict, payload: dict) -> dict:
 
         dev = dev_map.get(dev_id)
         if dev is None:
+            # unknown device, keep it (backend can reject if invalid)
             filtered.append(a)
             continue
 
         current = dev.get("state")
+
+        # If the target is the same as current, don't bother sending
         if current == target:
             continue
 
@@ -383,9 +404,11 @@ def drop_idempotent_actions(snapshot: dict, payload: dict) -> dict:
 def build_human_explanation(snapshot: dict, command_payload: dict) -> str:
     """
     Build a short, human-readable explanation of what the AI did this cycle.
+    This is local – no extra model calls.
     """
     devices = snapshot.get("devices", [])
     mode = infer_mode(snapshot)
+    occupancy = get_occupancy(snapshot)
 
     def find(dev_id: str) -> Optional[dict]:
         return next((d for d in devices if d.get("id") == dev_id), None)
@@ -402,6 +425,7 @@ def build_human_explanation(snapshot: dict, command_payload: dict) -> str:
 
     lines: List[str] = []
     lines.append(f"Mode: {mode}.")
+    lines.append(f"Occupancy: {occupancy}.")
     lines.append(
         f"Bilge high float: {on(bilge_high)}, bilge auto override: {on(bilge_override)}."
     )
@@ -414,10 +438,12 @@ def build_human_explanation(snapshot: dict, command_payload: dict) -> str:
         lines.append("No actions generated.")
         return " ".join(lines)
 
+    # If it's just a no-op, keep it simple.
     if len(actions) == 1 and actions[0].get("type") == "no_op":
         lines.append("No intervention required – all conditions within normal limits.")
         return " ".join(lines)
 
+    # Otherwise, summarise each action briefly.
     lines.append(f"Actions taken this cycle: {len(actions)}.")
     for a in actions:
         t = a.get("type")
@@ -436,29 +462,26 @@ def build_human_explanation(snapshot: dict, command_payload: dict) -> str:
     return " ".join(lines)
 
 
-async def send_ai_log(
-    http: httpx.AsyncClient,
-    snapshot: dict,
-    command_payload: dict,
-    explanation: str,
-) -> None:
+async def send_ai_log(http: httpx.AsyncClient, snapshot: dict, command_payload: dict, explanation: str):
     """
     Send a human-readable log entry to the backend so the UI can display it.
     """
     url = f"{BACKEND_BASE_URL}/yachts/{YACHT_ID}/ai/logs"
 
     mode = infer_mode(snapshot)
+    occupancy = get_occupancy(snapshot)
 
     payload = {
         "generated_at": command_payload.get("generated_at") or datetime.now(timezone.utc).isoformat(),
         "summary": explanation,
         "actions": command_payload.get("actions", []),
-        "mode": mode,
+        "mode": f"{mode} (occupancy={occupancy})",
     }
 
     try:
         await http.post(url, json=payload, timeout=5.0)
     except Exception as e:
+        # Don't ever break the watchkeeper if logging fails.
         print(f"[watchkeeper] Failed to send AI log: {e}")
 
 
@@ -471,16 +494,20 @@ def apply_hard_rules(snapshot: dict, payload: dict) -> dict:
     """
     global bilge_pump_on_since, bilge_forced_rest_until, bilge_last_forced_by_ai
 
+    # 0) Remove any model-produced actions on the bilge override
     filter_model_bilge_actions(payload)
 
     now = datetime.now(timezone.utc)
     devices = snapshot.get("devices", [])
     actions = payload.get("actions", [])
 
+    # Find relevant devices
     bilge_high = next((d for d in devices if d.get("id") == "bilge_float_high"), None)
     bilge_override = next((d for d in devices if d.get("id") == "bilge_pump_auto_override"), None)
 
+    # Use latched state for high bilge: stays True for 60s after last True
     bilge_high_state = get_sensor_state_with_latch("bilge_float_high", bilge_high, hold_seconds=60)
+
     override_state = bool(bilge_override and bilge_override.get("state") is True)
     override_ai_allowed = bool(bilge_override and bilge_override.get("ai_control"))
 
@@ -516,6 +543,7 @@ def apply_hard_rules(snapshot: dict, payload: dict) -> dict:
                     "reason": "Bilge high float is active and override is OFF – forcing pump ON for safety.",
                 }
             )
+            # We just took control
             bilge_last_forced_by_ai = True
 
     # 3) RUNTIME LIMIT RULE
@@ -546,6 +574,7 @@ def apply_hard_rules(snapshot: dict, payload: dict) -> dict:
             )
             bilge_forced_rest_until = now + timedelta(seconds=BILGE_REST_SECONDS)
             bilge_pump_on_since = None
+            # This OFF is clearly AI-originated
             bilge_last_forced_by_ai = True
 
     # 4) HIGH FLOAT CLEARED RULE (AFTER AI-DRIVEN USE)
@@ -568,6 +597,7 @@ def apply_hard_rules(snapshot: dict, payload: dict) -> dict:
                 "reason": "Bilge high float cleared after AI-driven pump use – turning bilge pump override OFF.",
             }
         )
+        # We've cleaned up after ourselves
         bilge_last_forced_by_ai = False
         bilge_pump_on_since = None
         bilge_forced_rest_until = None
@@ -589,12 +619,16 @@ async def call_model(snapshot: dict) -> dict:
 
     system_prompt = build_prompt(snapshot)
 
+    # Add inferred mode and occupancy into the JSON that the model sees
     mode = infer_mode(snapshot)
+    occupancy = get_occupancy(snapshot)
+
     snapshot_for_model = dict(snapshot)
     snapshot_for_model["mode"] = mode
+    snapshot_for_model["occupancy"] = occupancy
 
     completion = client.chat.completions.create(
-        model="gpt-5-nano",
+        model="gpt-5-nano",  # default temperature=1
         response_format={"type": "json_object"},
         messages=[
             {
@@ -604,8 +638,8 @@ async def call_model(snapshot: dict) -> dict:
             {
                 "role": "user",
                 "content": (
-                    "Here is the current yacht state snapshot as JSON, including an inferred 'mode'. "
-                    "Decide if you want to take any actions.\n\n"
+                    "Here is the current yacht state snapshot as JSON, including inferred 'mode' "
+                    f"and 'occupancy' (current='{occupancy}'). Decide if you want to take any actions.\n\n"
                     + json.dumps(snapshot_for_model)
                 ),
             },
@@ -615,14 +649,17 @@ async def call_model(snapshot: dict) -> dict:
     raw_json = completion.choices[0].message.content
     payload = json.loads(raw_json)
 
+    # Fill in mandatory metadata
     payload.setdefault("yacht_id", YACHT_ID)
     payload.setdefault("request_id", request_id)
     payload.setdefault("requested_by", "ai_watchkeeper")
     payload.setdefault("generated_at", now.isoformat())
     payload.setdefault("actions", [])
 
+    # 🔒 Apply hard safety rules on top of whatever the model said
     payload = apply_hard_rules(snapshot, payload)
 
+    # If after hard rules there are still no actions, inject a no-op
     if not payload["actions"]:
         payload["actions"] = [
             {
@@ -640,7 +677,7 @@ async def call_model(snapshot: dict) -> dict:
     return payload
 
 
-async def loop_once(http: httpx.AsyncClient) -> None:
+async def loop_once(http: httpx.AsyncClient):
     try:
         snapshot = await fetch_snapshot(http)
     except Exception as e:
@@ -653,9 +690,13 @@ async def loop_once(http: httpx.AsyncClient) -> None:
         print(f"[watchkeeper] Model call failed: {e}")
         return
 
+    # Build human-readable explanation
     explanation = build_human_explanation(snapshot, command_payload)
+
+    # Send AI log to backend (non-critical)
     await send_ai_log(http, snapshot, command_payload, explanation)
 
+    # DEBUG: see exactly what we are sending to the backend
     print("[watchkeeper] command_payload:")
     print(json.dumps(command_payload, indent=2))
 
@@ -666,7 +707,7 @@ async def loop_once(http: httpx.AsyncClient) -> None:
         print(f"[watchkeeper] Failed to apply commands: {e}")
 
 
-async def main() -> None:
+async def main():
     async with httpx.AsyncClient() as http:
         while True:
             await loop_once(http)

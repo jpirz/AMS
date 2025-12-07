@@ -23,13 +23,14 @@
         #020617;
     }
 
-    /* LIGHT THEME */
+    /* LIGHT THEME – brighter, sky-blue style */
 
     body.light-theme {
-      background: radial-gradient(circle at top left, rgba(59,130,246,0.10), transparent 55%),
-                  radial-gradient(circle at bottom right, rgba(34,197,94,0.10), transparent 55%),
-                  #e5e7eb;
-      color: #020617;
+      background:
+        radial-gradient(circle at top left, rgba(96,165,250,0.5), transparent 55%),
+        radial-gradient(circle at bottom right, rgba(56,189,248,0.4), transparent 55%),
+        #0b1120;
+      color: #0f172a;
     }
 
     .panel-frame {
@@ -50,11 +51,11 @@
     }
 
     body.light-theme .panel-frame {
-      background-image: none;
-      background: #e5e7eb;
+      background-image:
+        repeating-linear-gradient(45deg, #0b1220 0, #0b1220 2px, #0f172a 2px, #0f172a 4px);
       box-shadow:
-        0 18px 40px rgba(15,23,42,0.3),
-        inset 0 0 0 1px rgba(148,163,184,0.35);
+        0 22px 50px rgba(15,23,42,0.9),
+        inset 0 0 0 1px rgba(148,163,184,0.4);
     }
 
     .panel-inner {
@@ -68,8 +69,8 @@
     }
 
     body.light-theme .panel-inner {
-      background: #f9fafb;
-      border-color: #d1d5db;
+      background: #0b1220;
+      border-color: #1f2937;
     }
 
     /* TOP BAR */
@@ -82,12 +83,14 @@
       background: #020617;
       border-bottom: 1px solid #1f2937;
       box-shadow: 0 2px 6px rgba(0,0,0,0.45);
+      gap: 8px;
     }
 
     body.light-theme .top-bar {
-      background: #f9fafb;
-      border-bottom-color: #e5e7eb;
-      box-shadow: 0 2px 6px rgba(148,163,184,0.5);
+      background: rgba(15,23,42,0.9);
+      border-bottom-color: #1e293b;
+      box-shadow: 0 3px 10px rgba(15,23,42,0.9);
+      backdrop-filter: blur(10px);
     }
 
     .top-left {
@@ -107,13 +110,15 @@
       font-size: 10px;
       color: #9ca3af;
     }
-    body.light-theme .title-main { color:#0f172a; }
-    body.light-theme .title-sub { color:#6b7280; }
+    body.light-theme .title-main { color:#f9fafb; }
+    body.light-theme .title-sub { color:#cbd5f5; }
 
     .top-center {
       display: flex;
       gap: 4px;
       align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
     }
 
     .mode-pill {
@@ -134,19 +139,64 @@
       box-shadow:0 0 0 1px rgba(22,163,74,0.4);
     }
     body.light-theme .mode-pill {
-      background:#f3f4f6;
-      border-color:#cbd5f5;
-      color:#4b5563;
+      background:#0b1120;
+      border-color:#1f2937;
+      color:#e5e7eb;
+    }
+    body.light-theme .mode-pill.active {
+      background:#22c55e;
+      border-color:#22c55e;
     }
 
     .top-right {
       text-align:right;
       font-size:9px;
       color:#9ca3af;
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+      align-items:flex-end;
     }
     .top-right span { color:#e5e7eb; }
-    body.light-theme .top-right { color:#6b7280; }
-    body.light-theme .top-right span { color:#111827; }
+    body.light-theme .top-right { color:#e5e7eb; }
+    body.light-theme .top-right span { color:#f9fafb; }
+
+    .occ-controls {
+      display:flex;
+      gap:4px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+      margin-top:2px;
+    }
+
+    .occ-pill {
+      padding:2px 7px;
+      border-radius:999px;
+      font-size:9px;
+      border:1px solid #1f2937;
+      background:#020617;
+      color:#9ca3af;
+      text-transform:uppercase;
+      letter-spacing:0.08em;
+      cursor:pointer;
+    }
+    .occ-pill.active[data-occupancy="onboard"] {
+      background:#16a34a;
+      border-color:#16a34a;
+      color:#ecfdf5;
+      box-shadow:0 0 0 1px rgba(22,163,74,0.5);
+    }
+    .occ-pill.active[data-occupancy="unattended"] {
+      background:#b91c1c;
+      border-color:#b91c1c;
+      color:#fee2e2;
+      box-shadow:0 0 0 1px rgba(248,113,113,0.5);
+    }
+    body.light-theme .occ-pill {
+      background:#0b1120;
+      border-color:#1f2937;
+      color:#e5e7eb;
+    }
 
     /* TABS */
 
@@ -159,8 +209,8 @@
       justify-content:center;
     }
     body.light-theme .tabs-bar {
-      background:#f9fafb;
-      border-bottom-color:#e5e7eb;
+      background:#0b1220;
+      border-bottom-color:#1f2937;
     }
 
     .tab-btn {
@@ -182,13 +232,12 @@
       border-color:#4b5563;
     }
     body.light-theme .tab-btn {
-      background:#f3f4f6;
-      border-color:#d1d5db;
-      color:#4b5563;
+      background:#0b1120;
+      border-color:#1f2937;
+      color:#e5e7eb;
     }
     body.light-theme .tab-btn.active {
-      background:#111827;
-      color:#f9fafb;
+      background:#1e293b;
       border-color:#4b5563;
     }
 
@@ -259,9 +308,9 @@
       overflow:hidden;
     }
     body.light-theme .card {
-      background:#ffffff;
-      border-color:#e5e7eb;
-      box-shadow:0 14px 32px rgba(15,23,42,0.25);
+      background:rgba(15,23,42,0.94);
+      border-color:#1f2937;
+      box-shadow:0 12px 32px rgba(30,64,175,0.7);
     }
 
     .card-header {
@@ -274,8 +323,8 @@
       gap:4px;
     }
     body.light-theme .card-header {
-      background:#f9fafb;
-      border-bottom-color:#e5e7eb;
+      background:#0b1220;
+      border-bottom-color:#1f2937;
     }
 
     .card-title {
@@ -284,7 +333,7 @@
       letter-spacing:0.1em;
       color:#9ca3af;
     }
-    body.light-theme .card-title { color:#6b7280; }
+    body.light-theme .card-title { color:#cbd5f5; }
 
     .card-header-right {
       font-size:10px;
@@ -295,6 +344,7 @@
       flex-wrap:wrap;
       justify-content:flex-end;
     }
+    body.light-theme .card-header-right { color:#9ca3af; }
 
     .card-body {
       flex:1;
@@ -317,8 +367,8 @@
     }
     .small-btn:hover { background:#111827; }
     body.light-theme .small-btn {
-      background:#111827;
-      border-color:#111827;
+      background:#1e293b;
+      border-color:#1e293b;
       color:#f9fafb;
     }
 
@@ -344,10 +394,10 @@
       box-shadow:0 4px 10px rgba(0,0,0,0.5);
     }
     body.light-theme .scene-btn {
-      background:#ffffff;
-      border-color:#e5e7eb;
-      color:#111827;
-      box-shadow:0 4px 10px rgba(15,23,42,0.15);
+      background:#0b1220;
+      border-color:#1f2937;
+      color:#e5e7eb;
+      box-shadow:0 4px 10px rgba(15,23,42,0.7);
     }
     .scene-name {
       font-weight:500;
@@ -361,9 +411,9 @@
       overflow:hidden;
       text-overflow:ellipsis;
     }
-    body.light-theme .scene-desc { color:#6b7280; }
+    body.light-theme .scene-desc { color:#9ca3af; }
 
-    /* DEVICE GRID – 3 columns, minimal tiles */
+    /* DEVICE GRID */
 
     .device-grid {
       flex:1;
@@ -389,8 +439,8 @@
       min-height:34px;
     }
     body.light-theme .device-card {
-      background:#ffffff;
-      border-color:#e5e7eb;
+      background:#020617;
+      border-color:#1f2937;
     }
 
     .device-name {
@@ -402,7 +452,7 @@
       text-overflow:ellipsis;
       margin-right:4px;
     }
-    body.light-theme .device-name { color:#111827; }
+    body.light-theme .device-name { color:#f9fafb; }
 
     .state-pill {
       min-width:46px;
@@ -434,9 +484,9 @@
       box-shadow:none;
     }
     body.light-theme .state-pill.off {
-      background:#f3f4f6;
-      border-color:#d1d5db;
-      color:#4b5563;
+      background:#020617;
+      border-color:#4b5563;
+      color:#cbd5f5;
     }
 
     /* SENSORS */
@@ -457,42 +507,32 @@
       gap:4px;
     }
     body.light-theme .sensor-item {
-      background:#ffffff;
-      border-color:#e5e7eb;
+      background:#020617;
+      border-color:#1f2937;
     }
     .sensor-main {
       display:flex;
       flex-direction:column;
       gap:1px;
-      min-width:0;
     }
     .sensor-name {
       font-size:11px;
       font-weight:500;
       color:#e5e7eb;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      max-width:140px;
     }
-    body.light-theme .sensor-name { color:#111827; }
+    body.light-theme .sensor-name { color:#f9fafb; }
     .sensor-meta {
       font-size:10px;
       color:#6b7280;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      max-width:160px;
     }
+    body.light-theme .sensor-meta { color:#9ca3af; }
 
-    /* NEW: graphical area between label + pill */
     .sensor-graphic {
       flex:1;
       margin:0 4px;
       display:flex;
       align-items:center;
       justify-content:center;
-      min-width:60px;
     }
 
     .sensor-state {
@@ -504,7 +544,6 @@
       text-align:center;
       background:#020617;
       color:#9ca3af;
-      flex-shrink:0;
     }
     .sensor-state.on {
       border-color:#22c55e;
@@ -524,12 +563,10 @@
       box-shadow:none;
     }
     body.light-theme .sensor-state {
-      background:#f9fafb;
-      border-color:#d1d5db;
-      color:#374151;
+      background:#020617;
+      border-color:#1f2937;
+      color:#cbd5f5;
     }
-
-    /* NEW: level bars / boolean dots */
 
     .level-bar {
       position:relative;
@@ -555,8 +592,8 @@
       background:linear-gradient(to right,#22c55e,#16a34a);
     }
     body.light-theme .level-bar {
-      background:#f9fafb;
-      border-color:#d1d5db;
+      background:#020617;
+      border-color:#1f2937;
     }
 
     .bool-dot {
@@ -565,7 +602,6 @@
       border-radius:999px;
       border:1px solid #374151;
       background:#020617;
-      flex-shrink:0;
     }
     .bool-dot.on {
       background:#16a34a;
@@ -575,11 +611,11 @@
       background:#111827;
     }
     body.light-theme .bool-dot {
-      background:#f9fafb;
-      border-color:#d1d5db;
+      background:#020617;
+      border-color:#4b5563;
     }
     body.light-theme .bool-dot.off {
-      background:#e5e7eb;
+      background:#111827;
     }
 
     /* EVENTS / ALARMS / AI LOGS */
@@ -589,7 +625,7 @@
       padding:3px 4px;
       border-bottom:1px dotted #1f2937;
     }
-    body.light-theme .event-item { border-bottom-color:#e5e7eb; }
+    body.light-theme .event-item { border-bottom-color:#1f2937; }
     .event-meta { color:#6b7280; font-size:10px; }
     .event-type { color:#a5b4fc; font-weight:500; }
     .event-details {
@@ -599,7 +635,7 @@
       overflow:hidden;
       text-overflow:ellipsis;
     }
-    body.light-theme .event-details { color:#6b7280; }
+    body.light-theme .event-details { color:#cbd5f5; }
 
     .alarm-tag {
       display:inline-block;
@@ -635,6 +671,11 @@
         <div class="top-right">
           API: <span id="apiBase">/</span><br/>
           Last: <span id="lastAction">none</span><br/>
+          Occupancy: <span id="occupancyLabel">Onboard</span>
+          <div class="occ-controls">
+            <button class="occ-pill" data-occupancy="onboard">Onboard</button>
+            <button class="occ-pill" data-occupancy="unattended">Unattended</button>
+          </div>
           <button id="themeToggleBtn" class="small-btn">Light mode</button>
         </div>
       </div>
@@ -667,7 +708,8 @@
               </div>
             </div>
             <div class="card-body">
-              <div id="sceneButtons" class="scene-row"></div>
+              <!-- Scenes row hidden, but kept for JS -->
+              <div id="sceneButtons" class="scene-row" style="display:none;"></div>
               <div id="deviceContainer" class="device-grid"></div>
             </div>
           </div>
@@ -698,10 +740,7 @@
               </div>
             </div>
             <div class="card-body" style="display:flex; flex-direction:column; gap:4px; overflow:hidden;">
-              <!-- Visible AI logs -->
               <div id="aiLogs" class="events-list" style="flex:1; overflow-y:auto;"></div>
-
-              <!-- Hidden events list so existing JS continues to work -->
               <div id="eventsList" class="events-list" style="display:none;"></div>
             </div>
           </div>
@@ -712,9 +751,7 @@
           <div class="card">
             <div class="card-header">
               <div class="card-title">AI Watchkeeper – Chat</div>
-              <div class="card-header-right">
-                <!-- Reserved for future controls -->
-              </div>
+              <div class="card-header-right"></div>
             </div>
             <div class="card-body" style="display:flex; flex-direction:column; gap:4px; overflow:hidden;">
               <div id="aiChatPanel"
@@ -790,6 +827,8 @@
     const aiChatMessages   = document.getElementById("aiChatMessages");
     const aiChatSendBtn    = document.getElementById("aiChatSendBtn");
 
+    const occupancyLabel   = document.getElementById("occupancyLabel");
+
     document.getElementById("apiBase").textContent  = window.location.origin;
     document.getElementById("yachtName").textContent = yachtId;
 
@@ -834,6 +873,50 @@
         btn.classList.add("active");
       });
     });
+
+    /* OCCUPANCY (ONBOARD / UNATTENDED) */
+
+    let occupancyMode = localStorage.getItem("ams_occupancy") || "onboard";
+
+    function updateOccupancyUI() {
+      if (occupancyLabel) {
+        occupancyLabel.textContent =
+          occupancyMode === "unattended" ? "Unattended" : "Onboard";
+      }
+      document.querySelectorAll(".occ-pill").forEach(b => {
+        const val = b.getAttribute("data-occupancy");
+        b.classList.toggle("active", val === occupancyMode);
+      });
+    }
+
+    async function sendOccupancyToBackend() {
+      try {
+        await fetch(`${apiBase}/yachts/${yachtId}/ai/occupancy`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            occupancy: occupancyMode,
+            source: "web_ui"
+          })
+        });
+        setLastAction(`Occupancy: ${occupancyMode}`);
+      } catch (err) {
+        console.error(err);
+        setLastAction("Error updating occupancy");
+      }
+    }
+
+    document.querySelectorAll(".occ-pill").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const value = btn.getAttribute("data-occupancy");
+        occupancyMode = value === "unattended" ? "unattended" : "onboard";
+        localStorage.setItem("ams_occupancy", occupancyMode);
+        updateOccupancyUI();
+        sendOccupancyToBackend();
+      });
+    });
+
+    updateOccupancyUI();
 
     /* HEADER BUTTONS */
 
@@ -897,16 +980,13 @@
       const name = (dev.name || "").toLowerCase();
       const hay = id + " " + name;
 
-      // Explicit alarm IDs: true = alarm
       if (ALARM_IDS.has(dev.id) && v === true) return true;
 
       if (typeof v === "boolean") {
-        // Shore power / AC in: false means disconnected = alarm
         if (hay.includes("shore") || hay.includes("ac_input")) {
           return v === false;
         }
 
-        // Bilge / battery / generic alarm/fault sensors: true = alarm
         if (
           hay.includes("bilge") ||
           hay.includes("battery") ||
@@ -922,17 +1002,14 @@
       }
 
       if (typeof v === "number") {
-        // Fuel / tank levels: low or overfill = alarm
         if (hay.includes("fuel") || hay.includes("tank")) {
           return v <= 20 || v >= 95;
         }
 
-        // Battery voltage: low = alarm (rough threshold)
         if (hay.includes("battery") && hay.includes("volt")) {
           return v < 11.5;
         }
 
-        // Temperatures: high = alarm (rough threshold)
         if (hay.includes("temp") || hay.includes("temperature")) {
           return v > 90;
         }
@@ -1042,13 +1119,11 @@
           const isBoolean = typeof dev.state === "boolean";
           const isNumber  = typeof dev.state === "number";
 
-          // Graphical representation
           if (isNumber) {
             let raw = Number(dev.state) || 0;
             let level;
 
             if (hay.includes("battery") && hay.includes("volt")) {
-              // Map 11–14 V -> 0–100%
               level = ((raw - 11) / 3) * 100;
             } else {
               level = raw;
@@ -1098,7 +1173,6 @@
 
           state.textContent = text;
 
-          // Allow clicking to simulate sensors, but keep panel buttons read-only
           if (!READONLY_IDS.has(dev.id)) {
             state.classList.add("btn-like");
             state.title = "Click to toggle test value";
@@ -1107,27 +1181,22 @@
               let newVal;
 
               if (isBoolean || dev.state === null || dev.state === undefined) {
-                // Digital sensor: toggle ON/OFF
                 newVal = !Boolean(dev.state);
               } else if (isNumber) {
                 const current = Number(dev.state) || 0;
 
-                if (dev.id.toLowerCase().includes("fuel") || dev.name.toLowerCase().includes("fuel") ||
-                    dev.id.toLowerCase().includes("tank") || dev.name.toLowerCase().includes("tank")) {
-                  // Fuel / tank test: low vs normal vs high
+                if (dev.id.toLowerCase().includes("fuel") || dev.name.toLowerCase().includes("fuel")) {
                   if (current <= 20) {
-                    newVal = 60;      // normal
+                    newVal = 60;
                   } else if (current >= 95) {
-                    newVal = 60;      // back to normal
+                    newVal = 60;
                   } else {
-                    newVal = 10;      // low alarm
+                    newVal = 10;
                   }
                 } else {
-                  // Generic numeric: toggle between normal-ish and high/low alarm
                   newVal = current > 50 ? 20 : 90;
                 }
               } else {
-                // Fallback: toggle truthy/falsy
                 newVal = dev.state ? 0 : 1;
               }
 
@@ -1201,7 +1270,6 @@
     }
 
     function acknowledgeAlarms() {
-      // UI-only acknowledgement for now
       setLastAction("Alarms acknowledged");
     }
 
@@ -1219,7 +1287,6 @@
               await setSensorValue(d.id, false);
             }
           } else if (typeof d.state === "number") {
-            // reset numeric sensors to a mid "normal" value
             await setSensorValue(d.id, 60);
           }
         }
@@ -1235,7 +1302,7 @@
 
     async function loadScenes() {
       try {
-        const res = await fetch(`${apiBase}/yachts/${yachtId}/scenes/`);
+        const res = await fetch(`${apiBase}/yachts/${yachtId}/scenes`);
         if (!res.ok) throw new Error("Failed to load scenes");
         const scenes = await res.json();
         renderScenes(scenes);
@@ -1246,6 +1313,7 @@
     }
 
     function renderScenes(scenes) {
+      if (!sceneButtons) return;
       sceneButtons.innerHTML = "";
       scenes.forEach(scene => {
         const btn = document.createElement("button");
@@ -1287,7 +1355,7 @@
       }
     }
 
-    /* EVENTS (kept for alarm history + internal refresh) */
+    /* EVENTS (for history) */
 
     async function loadEvents() {
       try {
@@ -1314,12 +1382,12 @@
         meta.className = "event-meta";
         meta.innerHTML = `<span class="event-type">${ev.type}</span> · ${ts} · ${ev.source}`;
 
-        const details = document.createElement("div");
-        details.className = "event-details";
-        details.textContent = JSON.stringify(ev.details);
+        const detailsDiv = document.createElement("div");
+        detailsDiv.className = "event-details";
+        detailsDiv.textContent = JSON.stringify(ev.details);
 
         item.appendChild(meta);
-        item.appendChild(details);
+        item.appendChild(detailsDiv);
         eventsList.appendChild(item);
       });
     }
@@ -1497,6 +1565,8 @@
       await loadEvents();
       await loadAlarmEvents();
       await loadAiLogs();
+      // Push initial occupancy state to backend once on load
+      sendOccupancyToBackend();
       setLastAction("UI ready");
     })();
   </script>
