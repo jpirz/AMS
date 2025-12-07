@@ -284,6 +284,7 @@
             margin-top: 12px;
         }
 
+<<<<<<< HEAD
         .tab-content.active {
             display: block;
         }
@@ -332,6 +333,67 @@
             border-color: rgba(248, 113, 113, 0.5);
             color: var(--danger);
         }
+=======
+    .sensors-list {
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+      gap:4px;
+    }
+    .sensor-item {
+      padding:4px 5px;
+      border-radius:6px;
+      border:1px solid #111827;
+      background:#020617;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:4px;
+    }
+    body.light-theme .sensor-item {
+      background:#ffffff;
+      border-color:#e5e7eb;
+    }
+    .sensor-main {
+      display:flex;
+      flex-direction:column;
+      gap:1px;
+    }
+    .sensor-name {
+      font-size:11px;
+      font-weight:500;
+      color:#e5e7eb;
+    }
+    body.light-theme .sensor-name { color:#111827; }
+    .sensor-meta {
+      font-size:10px;
+      color:#6b7280;
+    }
+    .sensor-state {
+      font-size:10px;
+      padding:4px 6px;
+      border-radius:999px;
+      border:1px solid #1f2937;
+      min-width:56px;
+      text-align:center;
+      background:#020617;
+      color:#9ca3af;
+    }
+    .sensor-state.on {
+      border-color:#22c55e;
+      color:#bbf7d0;
+    }
+    .sensor-state.alarm {
+      border-color:#f97316;
+      color:#fed7aa;
+    }
+    body.light-theme .sensor-state {
+      background:#f9fafb;
+      border-color:#d1d5db;
+      color:#374151;
+    }
+
+    /* EVENTS / ALARMS */
+>>>>>>> parent of eab19c4 (1)
 
         .btn.small {
             padding: 4px 10px;
@@ -600,6 +662,7 @@
     <header>
         <h1>Marex Flexi 21 – Control Panel</h1>
 
+<<<<<<< HEAD
         <div class="header-top">
             <div class="yacht-meta">
                 <div>
@@ -617,6 +680,70 @@
                 <div class="last-event">
                     Last: <strong id="lastEventText">none</strong>
                 </div>
+=======
+      <!-- TABS -->
+      <div class="tabs-bar">
+        <button class="tab-btn active" data-page="controls">Controls</button>
+        <button class="tab-btn" data-page="status">Status & Tests</button>
+        <button class="tab-btn" data-page="events">Events</button>
+        <button class="tab-btn" data-page="alarms">Alarms</button>
+      </div>
+
+      <!-- ALARM BANNER -->
+      <div id="alarmBanner" class="alarm-banner ok">
+        <span class="alarm-banner-label">Alarms</span>
+        <span id="alarmBannerText">No active alarms.</span>
+      </div>
+
+      <!-- PAGES -->
+      <div class="page-container">
+        <!-- CONTROLS -->
+        <div class="page active" id="page-controls">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Controls</div>
+              <div class="card-header-right">
+                <span id="summaryLine">–</span>
+                <button id="refreshDevicesBtn" class="small-btn">Refresh</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="sceneButtons" class="scene-row"></div>
+              <div id="deviceContainer" class="device-grid"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STATUS -->
+        <div class="page" id="page-status">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Status & Tests</div>
+              <div class="card-header-right">
+                <button id="refreshSensorsBtn" class="small-btn">Refresh</button>
+                <button id="bilgeTestBtn" class="small-btn">Bilge Test</button>
+                <button id="batteryTestBtn" class="small-btn">Battery Test</button>
+                <button id="fuelTestBtn" class="small-btn">Fuel Low Test</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="sensorContainer" class="sensors-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- EVENTS -->
+        <div class="page" id="page-events">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Events</div>
+              <div class="card-header-right">
+                <button id="refreshEventsBtn" class="small-btn">Refresh</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="eventsList" class="events-list"></div>
+>>>>>>> parent of eab19c4 (1)
             </div>
 
             <div class="presence">
@@ -635,9 +762,20 @@
             </div>
         </div>
 
+<<<<<<< HEAD
         <div class="scene-strip">
             <div class="scene-buttons" id="sceneButtons">
                 <!-- Scenes loaded from backend -->
+=======
+        <!-- ALARMS PAGE -->
+        <div class="page" id="page-alarms">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Alarm History</div>
+              <div class="card-header-right">
+                <button id="refreshAlarmsBtn" class="small-btn">Refresh</button>
+              </div>
+>>>>>>> parent of eab19c4 (1)
             </div>
             <button class="btn small" type="button" onclick="refreshAll()">
                 ⟳ Refresh all
@@ -740,6 +878,7 @@
             </div>
             <div id="alarmsError" class="error-text"></div>
 
+<<<<<<< HEAD
             <div class="section-split">
                 <div>
                     <div class="muted" style="font-size: 12px; margin-bottom: 4px;">
@@ -765,6 +904,10 @@
 <script>
     const DEFAULT_YACHT_ID = "marex-21-001";
     const DEFAULT_API_BASE = ""; // blank = same origin
+=======
+    document.getElementById("apiBase").textContent  = window.location.origin;
+    document.getElementById("yachtName").textContent = yachtId;
+>>>>>>> parent of eab19c4 (1)
 
     let cachedEvents = [];
     let cachedAiMode = null;
@@ -775,6 +918,7 @@
         return v || DEFAULT_YACHT_ID;
     }
 
+<<<<<<< HEAD
     function getApiBase() {
         const el = document.getElementById("apiBaseInput");
         let v = (el && el.value.trim()) || DEFAULT_API_BASE;
@@ -784,6 +928,44 @@
         }
         return v;
     }
+=======
+    /* TABS */
+
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const page = btn.getAttribute("data-page");
+        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+        document.getElementById("page-" + page).classList.add("active");
+      });
+    });
+
+    /* MODE BUTTONS */
+
+    document.querySelectorAll(".mode-pill").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const sceneId = btn.getAttribute("data-scene");
+        activateScene(sceneId, btn.textContent.trim());
+        document.querySelectorAll(".mode-pill").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+      });
+    });
+
+    /* HEADER BUTTONS */
+
+    document.getElementById("refreshDevicesBtn").addEventListener("click", () => {
+      loadDevices();
+      loadScenes();
+    });
+    document.getElementById("refreshSensorsBtn").addEventListener("click", loadDevices);
+    document.getElementById("refreshEventsBtn").addEventListener("click", loadEvents);
+    document.getElementById("refreshAlarmsBtn").addEventListener("click", loadAlarmEvents);
+
+    document.getElementById("bilgeTestBtn").addEventListener("click", runBilgeTest);
+    document.getElementById("batteryTestBtn").addEventListener("click", runBatteryTest);
+    document.getElementById("fuelTestBtn").addEventListener("click", runFuelTest);
+>>>>>>> parent of eab19c4 (1)
 
     function buildUrl(path) {
         const base = getApiBase();
@@ -793,6 +975,7 @@
         return base + path;
     }
 
+<<<<<<< HEAD
     async function apiGet(path) {
         const url = buildUrl(path);
         const conn = document.getElementById("connectionStatus");
@@ -1008,6 +1191,33 @@
     }
 
     // --- DEVICES / CONTROLS ---
+=======
+    /* DEVICES & SENSORS */
+
+    async function loadDevices() {
+      try {
+        const res = await fetch(`${apiBase}/yachts/${yachtId}/devices/`);
+        if (!res.ok) throw new Error("Failed to load devices");
+        const devices = await res.json();
+        renderDevices(devices);
+        renderSensors(devices);
+        updateSummary(devices);
+        updateAlarmBanner(devices);
+        setLastAction("Devices refreshed");
+      } catch (err) {
+        console.error(err);
+        setLastAction("Error loading devices");
+      }
+    }
+
+    function updateSummary(devices) {
+      const controllable = devices.filter(d => d.type !== "sensor" && !READONLY_IDS.has(d.id));
+      const onCount  = controllable.filter(d => d.state === true).length;
+      const pumpsOn  = controllable.filter(d => d.type === "pump" && d.state === true).length;
+      const lightsOn = controllable.filter(d => d.type === "light" && d.state === true).length;
+      summaryLineEl.textContent = `${onCount} outputs ON · ${lightsOn} lights · ${pumpsOn} pumps`;
+    }
+>>>>>>> parent of eab19c4 (1)
 
     function renderDevices(devices) {
         const list = document.getElementById("deviceList");
@@ -1092,6 +1302,7 @@
         });
     }
 
+<<<<<<< HEAD
     async function loadDevices() {
         clearError("controlsError");
         const yachtId = encodeURIComponent(getYachtId());
@@ -1102,6 +1313,67 @@
             console.error("Failed to load devices", err);
             showError("controlsError", "Failed to load devices.");
         }
+=======
+    function renderSensors(devices) {
+      sensorContainer.innerHTML = "";
+
+      const sensors = devices.filter(dev =>
+        dev.type === "sensor" || READONLY_IDS.has(dev.id)
+      );
+
+      if (sensors.length === 0) {
+        sensorContainer.textContent = "No sensors configured.";
+        return;
+      }
+
+      sensors
+        .sort((a, b) => {
+          if (a.zone === b.zone) return a.name.localeCompare(b.name);
+          return a.zone.localeCompare(b.zone);
+        })
+        .slice(0, 16)
+        .forEach(dev => {
+          const item = document.createElement("div");
+          item.className = "sensor-item";
+
+          const main = document.createElement("div");
+          main.className = "sensor-main";
+
+          const name = document.createElement("div");
+          name.className = "sensor-name";
+          name.textContent = dev.name;
+
+          const meta = document.createElement("div");
+          meta.className = "sensor-meta";
+          meta.textContent = `${dev.zone} · ${dev.id}`;
+
+          main.appendChild(name);
+          main.appendChild(meta);
+
+          const state = document.createElement("div");
+          state.className = "sensor-state";
+
+          let text = "–";
+          if (dev.state === true) {
+            text = "ON";
+            state.classList.add("on");
+          } else if (dev.state === false) {
+            text = "OFF";
+          } else if (dev.state !== null && dev.state !== undefined) {
+            text = String(dev.state);
+          }
+
+          if (dev.id.includes("bilge") || dev.id.includes("battery_low")) {
+            if (dev.state === true) state.classList.add("alarm");
+          }
+
+          state.textContent = text;
+
+          item.appendChild(main);
+          item.appendChild(state);
+          sensorContainer.appendChild(item);
+        });
+>>>>>>> parent of eab19c4 (1)
     }
 
     async function setDeviceState(deviceId, newState) {
@@ -1119,12 +1391,152 @@
         }
     }
 
+<<<<<<< HEAD
     // --- EVENTS / STATUS / LAST ---
 
     function renderEvents(events) {
         const list = document.getElementById("statusEvents");
         if (!list) return;
         list.innerHTML = "";
+=======
+    async function setSensorValue(deviceId, value) {
+      try {
+        const res = await fetch(`${apiBase}/yachts/${yachtId}/devices/${deviceId}/state`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ state: value, source: "web_ui_test" })
+        });
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`Failed to set sensor value: ${errText}`);
+        }
+        await loadDevices();
+        await loadEvents();
+        await loadAlarmEvents();
+      } catch (err) {
+        console.error(err);
+        setLastAction(`Error setting ${deviceId}`);
+      }
+    }
+
+    /* ALARM BANNER LOGIC */
+
+    function updateAlarmBanner(devices) {
+      const active = devices.filter(
+        d => ALARM_IDS.has(d.id) && d.state === true
+      );
+
+      alarmBanner.classList.remove("ok","alarm");
+
+      if (active.length === 0) {
+        alarmBanner.classList.add("ok");
+        alarmBannerText.textContent = "No active alarms.";
+      } else {
+        alarmBanner.classList.add("alarm");
+        const names = active.map(d => d.name || d.id).join(" · ");
+        alarmBannerText.textContent = names;
+      }
+    }
+
+    /* TESTS */
+
+    function pulseDevice(deviceId, durationMs = 5000) {
+      setDeviceState(deviceId, true);
+      setLastAction(`TEST: ${deviceId} ON`);
+      setTimeout(() => setDeviceState(deviceId, false), durationMs);
+    }
+
+    function runBilgeTest() {
+      pulseDevice("bilge_float_high", 5000);
+      pulseDevice("bilge_float_auto", 5000);
+    }
+
+    function runBatteryTest() {
+      pulseDevice("battery_low_alarm", 5000);
+    }
+
+    function runFuelTest() {
+      setSensorValue("fuel_tank_level", 10);
+      setLastAction("Fuel level test → 10");
+      setTimeout(() => setSensorValue("fuel_tank_level", 60), 8000);
+    }
+
+    /* SCENES */
+
+    async function loadScenes() {
+      try {
+        const res = await fetch(`${apiBase}/yachts/${yachtId}/scenes`);
+        if (!res.ok) throw new Error("Failed to load scenes");
+        const scenes = await res.json();
+        renderScenes(scenes);
+      } catch (err) {
+        console.error(err);
+        setLastAction("Error loading scenes");
+      }
+    }
+
+    function renderScenes(scenes) {
+      sceneButtons.innerHTML = "";
+      scenes.forEach(scene => {
+        const btn = document.createElement("button");
+        btn.className = "scene-btn";
+        btn.addEventListener("click", () => activateScene(scene.id, scene.name));
+
+        const name = document.createElement("div");
+        name.className = "scene-name";
+        name.textContent = scene.name;
+
+        const desc = document.createElement("div");
+        desc.className = "scene-desc";
+        desc.textContent = scene.description || scene.id;
+
+        btn.appendChild(name);
+        btn.appendChild(desc);
+        sceneButtons.appendChild(btn);
+      });
+    }
+
+    async function activateScene(sceneId, sceneName) {
+      try {
+        const res = await fetch(`${apiBase}/yachts/${yachtId}/scenes/${sceneId}/activate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ source: "web_ui" })
+        });
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`Failed to activate scene: ${errText}`);
+        }
+        setLastAction(`Scene: ${sceneName}`);
+        await loadDevices();
+        await loadEvents();
+        await loadAlarmEvents();
+      } catch (err) {
+        console.error(err);
+        setLastAction(`Error activating scene: ${sceneName}`);
+      }
+    }
+
+    /* EVENTS */
+
+    async function loadEvents() {
+      try {
+        const res = await fetch(`${apiBase}/yachts/${yachtId}/events?limit=50`);
+        if (!res.ok) throw new Error("Failed to load events");
+        const events = await res.json();
+        renderEvents(events);
+      } catch (err) {
+        console.error(err);
+        setLastAction("Error loading events");
+      }
+    }
+
+    function renderEvents(events) {
+      eventsList.innerHTML = "";
+      events.slice(0, 15).forEach(ev => {
+        const item = document.createElement("div");
+        item.className = "event-item";
+>>>>>>> parent of eab19c4 (1)
 
         if (!Array.isArray(events) || events.length === 0) {
             const div = document.createElement("div");
@@ -1169,6 +1581,7 @@
         });
     }
 
+<<<<<<< HEAD
     function updateLastEvent(events) {
         const el = document.getElementById("lastEventText");
         if (!el) return;
@@ -1399,5 +1812,17 @@
         refreshAll();
     });
 </script>
+=======
+    /* INIT */
+
+    (async function init() {
+      await loadDevices();
+      await loadScenes();
+      await loadEvents();
+      await loadAlarmEvents();
+      setLastAction("UI ready");
+    })();
+  </script>
+>>>>>>> parent of eab19c4 (1)
 </body>
 </html>

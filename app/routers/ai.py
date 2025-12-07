@@ -1,11 +1,14 @@
 # app/routers/ai.py
 import json
 from typing import Any, Dict, List, Optional, Literal
-from datetime import datetime, timezone
+from datetime import datetime
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+<<<<<<< HEAD
 from openai import OpenAI
+=======
+>>>>>>> parent of eab19c4 (1)
 
 from app.db import get_connection
 from app.services.device_service_sql import DeviceService
@@ -16,12 +19,15 @@ from app.services.system_state_sql import SystemState  # NEW
 
 router = APIRouter(prefix="/yachts/{yacht_id}/ai", tags=["ai"])
 
+<<<<<<< HEAD
 # OpenAI client for chat endpoint (uses OPENAI_API_KEY)
 client = OpenAI()
 
 # System state service (for ai_mode)
 _system_state = SystemState()
 
+=======
+>>>>>>> parent of eab19c4 (1)
 
 # ---------- MODELS FOR AI COMMANDS ----------
 
@@ -45,6 +51,7 @@ class AICommandRequest(BaseModel):
   actions: List[AIAction]
 
 
+<<<<<<< HEAD
 # ---------- MODELS FOR AI WATCHKEEPER LOGS ----------
 
 
@@ -69,6 +76,9 @@ class AIChatResponse(BaseModel):
 
 # ---------- SNAPSHOT (same behaviour, now includes ai_mode) ----------
 
+=======
+# ---------- SNAPSHOT (unchanged from your version) ----------
+>>>>>>> parent of eab19c4 (1)
 
 @router.get("/state_snapshot")
 async def get_state_snapshot(yacht_id: str) -> Dict[str, Any]:
@@ -92,6 +102,7 @@ async def get_state_snapshot(yacht_id: str) -> Dict[str, Any]:
     )
     device_rows = d_cur.fetchall()
 
+<<<<<<< HEAD
     # Events (recent)
     e_cur = conn.execute(
       """
@@ -106,6 +117,23 @@ async def get_state_snapshot(yacht_id: str) -> Dict[str, Any]:
     event_rows = e_cur.fetchall()
   finally:
     conn.close()
+=======
+        # Events (recent)
+        e_cur = conn.execute(
+            """
+            SELECT timestamp, source, type, details
+            FROM events
+            WHERE yacht_id = ?
+            ORDER BY timestamp DESC
+            LIMIT 100
+            """
+            ,
+            (yacht_id,),
+        )
+        event_rows = e_cur.fetchall()
+    finally:
+        conn.close()
+>>>>>>> parent of eab19c4 (1)
 
   devices: List[Dict[str, Any]] = []
   for r in device_rows:
@@ -146,7 +174,7 @@ async def get_state_snapshot(yacht_id: str) -> Dict[str, Any]:
   }
 
 
-# ---------- COMMAND APPLICATION (same logic, 500 fix kept) ----------
+# ---------- COMMAND APPLICATION ----------
 
 
 @router.post("/commands")
@@ -194,15 +222,30 @@ async def apply_ai_commands(yacht_id: str, cmd: AICommandRequest) -> Dict[str, A
         )
         applied.append(action.action_id)
 
+<<<<<<< HEAD
     elif action.type == "activate_scene" and action.scene_id:
       # We allow AI to trigger scenes (e.g. night_mode, at_anchor)
       scene_service.activate_scene(
+=======
+        elif action.type == "activate_scene" and action.scene_id:
+            # We allow AI to trigger scenes (e.g. night_mode, at_anchor) if you want that behaviour
+            scene_service.activate_scene(
+                yacht_id=yacht_id,
+                source=f"ai:{cmd.request_id}",
+                scene_id=action.scene_id,
+            )
+            applied.append(action.action_id)
+
+    # Log the whole AI decision for auditing
+    event_logger.log(
+>>>>>>> parent of eab19c4 (1)
         yacht_id=yacht_id,
         source=f"ai:{cmd.request_id}",
         scene_id=action.scene_id,
       )
       applied.append(action.action_id)
 
+<<<<<<< HEAD
   # Log the whole AI decision for auditing
   event_logger.log(
     yacht_id=yacht_id,
@@ -379,3 +422,6 @@ async def ai_chat(yacht_id: str, body: AIChatRequest) -> AIChatResponse:
     conn.close()
 
   return AIChatResponse(reply=reply, created_at=created_at)
+=======
+    return {"applied": applied}
+>>>>>>> parent of eab19c4 (1)

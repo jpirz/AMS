@@ -82,6 +82,7 @@ async def fetch_snapshot(http: httpx.AsyncClient):
 
 
 async def send_ai_commands(http: httpx.AsyncClient, payload: dict):
+<<<<<<< HEAD
   """
   APPLY actions directly via /devices/.../state and /scenes/.../activate,
   instead of posting the whole payload to /ai/commands (which was giving 422).
@@ -148,6 +149,12 @@ async def send_ai_commands(http: httpx.AsyncClient, payload: dict):
     "skipped": skipped,
     "failed": failed,
   }
+=======
+    url = f"{BACKEND_BASE_URL}/yachts/{YACHT_ID}/ai/commands"
+    resp = await http.post(url, json=payload, timeout=5.0)
+    resp.raise_for_status()
+    return resp.json()
+>>>>>>> parent of eab19c4 (1)
 
 
 def infer_mode(snapshot: dict) -> str:
@@ -669,6 +676,7 @@ async def call_model(snapshot: dict) -> dict:
   snapshot_for_model = dict(snapshot)
   snapshot_for_model["mode"] = mode
 
+<<<<<<< HEAD
   completion = client.chat.completions.create(
     model="gpt-5-nano",  # default
     temperature=1,
@@ -688,6 +696,27 @@ async def call_model(snapshot: dict) -> dict:
       },
     ],
   )
+=======
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        response_format={"type": "json_object"},
+        messages=[
+            {
+                "role": "system",
+                "content": system_prompt,
+            },
+            {
+                "role": "user",
+                "content": (
+                    "Here is the current yacht state snapshot as JSON, including an inferred 'mode'. "
+                    "Decide if you want to take any actions.\n\n"
+                    + json.dumps(snapshot_for_model)
+                ),
+            },
+        ],
+        temperature=0.1,
+    )
+>>>>>>> parent of eab19c4 (1)
 
   raw_json = completion.choices[0].message.content
   payload = json.loads(raw_json)
