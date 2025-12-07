@@ -1,505 +1,206 @@
-# app/routers/ai.py
+# ai.py
 
-import json
-from typing import Any, Dict, List, Optional, Literal
-from datetime import datetime
+import os
+from datetime import datetime, timezone
+from typing import List, Optional, Dict, Any
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-
->>>>>>> parent of 58b4723 (2)
+import httpx
+from fastapi import APIRouter, HTTPException, Query
+from pydantic import BaseModel, Field
 from openai import OpenAI
-=======
->>>>>>> parent of eab19c4 (1)
 
-from app.db import get_connection
-from app.services.device_service_sql import DeviceService
-from app.services.scene_service_sql import SceneService
-from app.services.event_service_sql import EventLogger
-from app.hardware.manager import HardwareManager
+router = APIRouter(
+    prefix="/yachts/{yacht_id}/ai",
+    tags=["ai"],
+)
 
-router = APIRouter(prefix="/yachts/{yacht_id}/ai", tags=["ai"])
+# Internal loopback base URL so the AI endpoints can call existing
+# /devices, /events, /scenes without importing their internals.
+INTERNAL_BASE_URL = os.getenv("BACKEND_BASE_URL", "http://127.0.0.1:8000")
 
-<<<<<<< HEAD
-# OpenAI client for chat endpoint (uses OPENAI_API_KEY)
+# OpenAI client (uses OPENAI_API_KEY from environment)
 client = OpenAI()
 
-<<<<<<< HEAD
-# System state service (for ai_mode)
-_system_state = SystemState()
-
-=======
->>>>>>> parent of eab19c4 (1)
-=======
->>>>>>> parent of 58b4723 (2)
-
-# ---------- MODELS FOR AI COMMANDS ----------
-
-class AIAction(BaseModel):
-    action_id: str
-    type: Literal["set_device_state", "activate_scene", "no_op"]
-    device_id: Optional[str] = None
-    scene_id: Optional[str] = None
-    target_state: Optional[Any] = None
-    priority: Optional[str] = "info"
-    constraints: Dict[str, Any] = {}
-    reason: Optional[str] = None
+# In-memory AI logs: yacht_id -> list[dict]
+AI_LOGS: Dict[str, List[Dict[str, Any]]] = {}
 
 
-class AICommandRequest(BaseModel):
-    yacht_id: str
-    request_id: str
-    requested_by: str
-    generated_at: str
-    actions: List[AIAction]
-
-
-<<<<<<< HEAD
-# ---------- MODELS FOR AI WATCHKEEPER LOGS ----------
-
-class AIWatchLog(BaseModel):
-    generated_at: str
-    summary: str
-    actions: List[Dict[str, Any]]
-    mode: Optional[str] = None
-
-
-# ---------- MODELS FOR AI CHAT ----------
+# ---------- Models ----------
 
 class AIChatRequest(BaseModel):
-    message: str
+    message: str = Field(..., min_length=1)
 
 
 class AIChatResponse(BaseModel):
     reply: str
-    created_at: str
 
 
-<<<<<<< HEAD
-# ---------- SNAPSHOT (same behaviour, now includes ai_mode) ----------
+class AIWatchLogIn(BaseModel):
+    generated_at: datetime
+    summary: str
+    actions: List[dict] = Field(default_factory=list)
+    mode: Optional[str] = None
 
-=======
-# ---------- SNAPSHOT (unchanged from your version) ----------
->>>>>>> parent of eab19c4 (1)
-=======
-# ---------- SNAPSHOT (same behaviour as before) ----------
->>>>>>> parent of 58b4723 (2)
+
+class AIWatchLogOut(AIWatchLogIn):
+    id: str
+
+
+# ---------- Helpers ----------
+
+async def _fetch_json(client: httpx.AsyncClient, method: str, url: str, **kwargs) -> Any:
+    resp = await client.request(method, url, **kwargs)
+    resp.raise_for_status()
+    return resp.json()
+
+
+def _init_log_list(yacht_id: str) -> List[Dict[str, Any]]:
+    if yacht_id not in AI_LOGS:
+        AI_LOGS[yacht_id] = []
+    return AI_LOGS[yacht_id]
+
+
+# ---------- Endpoints ----------
 
 @router.get("/state_snapshot")
-async def get_state_snapshot(yacht_id: str) -> Dict[str, Any]:
+async def state_snapshot(yacht_id: str):
     """
-    Lightweight snapshot for the AI watchkeeper:
-    - All devices for this yacht
-    - Recent events (last 100)
+    Aggregate current state for the AI watchkeeper:
+
+    - devices: from /yachts/{id}/devices/
+    - scenes:  from /yachts/{id}/scenes/
+    - events:  from /yachts/{id}/events?limit=50
+
+    This keeps everything going through the existing device/event logic.
     """
-    conn = get_connection()
-    try:
-        # Devices
-        d_cur = conn.execute(
-            """
-            SELECT id, name, zone, type, state,
-                   ai_control, max_runtime_seconds, requires_human_ack
-            FROM devices
-            WHERE yacht_id = ?
-            """,
-            (yacht_id,),
-        )
-        device_rows = d_cur.fetchall()
-
-<<<<<<< HEAD
-<<<<<<< HEAD
-    # Events (recent)
-    e_cur = conn.execute(
-      """
-      SELECT timestamp, source, type, details
-      FROM events
-      WHERE yacht_id = ?
-      ORDER BY timestamp DESC
-      LIMIT 100
-      """,
-      (yacht_id,),
-    )
-    event_rows = e_cur.fetchall()
-  finally:
-    conn.close()
-=======
-=======
->>>>>>> parent of 58b4723 (2)
-        # Events (recent)
-        e_cur = conn.execute(
-            """
-            SELECT timestamp, source, type, details
-            FROM events
-            WHERE yacht_id = ?
-            ORDER BY timestamp DESC
-            LIMIT 100
-<<<<<<< HEAD
-            """
-            ,
-=======
-            """,
->>>>>>> parent of 58b4723 (2)
-            (yacht_id,),
-        )
-        event_rows = e_cur.fetchall()
-    finally:
-        conn.close()
-<<<<<<< HEAD
->>>>>>> parent of eab19c4 (1)
-=======
->>>>>>> parent of 58b4723 (2)
-
-    devices: List[Dict[str, Any]] = []
-    for r in device_rows:
-        state = json.loads(r["state"]) if r["state"] is not None else None
-        devices.append(
-            {
-                "id": r["id"],
-                "name": r["name"],
-                "zone": r["zone"],
-                "type": r["type"],
-                "state": state,
-                "ai_control": r["ai_control"],
-                "max_runtime_seconds": r["max_runtime_seconds"],
-                "requires_human_ack": bool(r["requires_human_ack"]),
-            }
-        )
-
-    events: List[Dict[str, Any]] = []
-    for r in event_rows:
-        details = json.loads(r["details"]) if r["details"] else None
-        events.append(
-            {
-                "timestamp": r["timestamp"],
-                "source": r["source"],
-                "type": r["type"],
-                "details": details,
-            }
+    async with httpx.AsyncClient(base_url=INTERNAL_BASE_URL, timeout=5.0) as http:
+        devices, scenes, events = await httpx.AsyncClient.gather(
+            _fetch_json(http, "GET", f"/yachts/{yacht_id}/devices/"),
+            _fetch_json(http, "GET", f"/yachts/{yacht_id}/scenes/"),
+            _fetch_json(http, "GET", f"/yachts/{yacht_id}/events/", params={"limit": 50}),
         )
 
     return {
-        "yacht_id": yacht_id,
-        "devices": devices,
-        "events": events,
+      "yacht": {
+        "id": yacht_id,
+        "name": yacht_id.replace("-", " ").title(),
+      },
+      "devices": devices,
+      "scenes": scenes,
+      "events": events,
     }
 
 
-# ---------- COMMAND APPLICATION ----------
-
-@router.post("/commands")
-async def apply_ai_commands(yacht_id: str, cmd: AICommandRequest) -> Dict[str, Any]:
+@router.post("/logs", response_model=AIWatchLogOut)
+async def add_ai_log(yacht_id: str, log: AIWatchLogIn):
     """
-    Apply AI-requested actions in a very conservative way:
-    - ignore 'no_op'
-    - only touch devices with ai_control = 1
-    - only apply boolean states to non-sensor devices (enforced by DeviceService)
+    Called by ai_watchkeeper.py each cycle with a human-readable summary
+    and the raw actions. Stored in-memory and used by the UI.
     """
-    if cmd.yacht_id != yacht_id:
-        raise HTTPException(status_code=400, detail="yacht_id mismatch")
+    log_list = _init_log_list(yacht_id)
 
-    # Local service instances for this request
-    hw_manager = HardwareManager()
-    event_logger = EventLogger()
-    device_service = DeviceService(hw_manager, event_logger)
-    scene_service = SceneService(device_service, event_logger)
-
-    applied: List[str] = []
-
-    for action in cmd.actions:
-        # Skip no-op actions
-        if action.type == "no_op":
-            continue
-
-        if action.type == "set_device_state" and action.device_id:
-            try:
-                dev = device_service.get_device(yacht_id, action.device_id)
-            except KeyError:
-                # Device doesn't exist, skip
-                continue
-
-            # Respect per-device AI enable flag
-            if not dev.ai_control:
-                continue
-
-            # Only boolean states for now (pumps, lights, etc.)
-            if isinstance(action.target_state, bool):
-                device_service.set_device_state(
-                    yacht_id=yacht_id,
-                    source=f"ai:{cmd.request_id}",
-                    device_id=action.device_id,
-                    state=action.target_state,
-                )
-                applied.append(action.action_id)
-
-<<<<<<< HEAD
-<<<<<<< HEAD
-    elif action.type == "activate_scene" and action.scene_id:
-      # We allow AI to trigger scenes (e.g. night_mode, at_anchor)
-      scene_service.activate_scene(
-=======
-        elif action.type == "activate_scene" and action.scene_id:
-            # We allow AI to trigger scenes (e.g. night_mode, at_anchor) if you want that behaviour
-=======
-        elif action.type == "activate_scene" and action.scene_id:
-            # We allow AI to trigger scenes (e.g. night_mode, at_anchor)
->>>>>>> parent of 58b4723 (2)
-            scene_service.activate_scene(
-                yacht_id=yacht_id,
-                source=f"ai:{cmd.request_id}",
-                scene_id=action.scene_id,
-            )
-            applied.append(action.action_id)
-
-    # Log the whole AI decision for auditing
-    event_logger.log(
-<<<<<<< HEAD
->>>>>>> parent of eab19c4 (1)
-=======
->>>>>>> parent of 58b4723 (2)
-        yacht_id=yacht_id,
-        source=f"ai:{cmd.request_id}",
-        type="ai_commands",
-        details={
-            "request_id": cmd.request_id,
-            "generated_at": cmd.generated_at,
-            "requested_by": cmd.requested_by,
-            "actions": [a.model_dump() for a in cmd.actions],
-            "applied": applied,
-        },
-    )
-
-<<<<<<< HEAD
-<<<<<<< HEAD
-  # Log the whole AI decision for auditing
-  event_logger.log(
-    yacht_id=yacht_id,
-    source=f"ai:{cmd.request_id}",
-    type="ai_commands",
-    details={
-      "request_id": cmd.request_id,
-      "generated_at": cmd.generated_at,
-      "requested_by": cmd.requested_by,
-      "actions": [a.model_dump() for a in cmd.actions],
-      "applied": applied,
-    },
-  )
-
-  return {"applied": applied}
-=======
-    return {"applied": applied}
->>>>>>> parent of 58b4723 (2)
+    log_id = f"log-{len(log_list) + 1:04d}"
+    out = {
+        "id": log_id,
+        "generated_at": log.generated_at,
+        "summary": log.summary,
+        "actions": log.actions,
+        "mode": log.mode,
+    }
+    log_list.append(out)
+    return out
 
 
-# ---------- AI WATCHKEEPER LOG STORAGE (used by ai_watchkeeper.py + UI) ----------
-
-@router.post("/logs")
-async def add_ai_log(yacht_id: str, log: AIWatchLog) -> Dict[str, str]:
-    """
-    Store a human-readable log entry from the ai_watchkeeper.
-    Reuses the events table with type='ai_log'.
-    """
-    conn = get_connection()
-    try:
-        conn.execute(
-            """
-            INSERT INTO events (yacht_id, timestamp, source, type, details)
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            (
-                yacht_id,
-                log.generated_at,
-                "ai_watchkeeper",
-                "ai_log",
-                json.dumps(
-                    {
-                        "summary": log.summary,
-                        "actions": log.actions,
-                        "mode": log.mode,
-                    }
-                ),
-            ),
-        )
-        conn.commit()
-    finally:
-        conn.close()
-
-    return {"status": "ok"}
-
-
-@router.get("/logs")
-async def get_ai_logs(
+@router.get("/logs", response_model=List[AIWatchLogOut])
+async def list_ai_logs(
     yacht_id: str,
-    limit: int = 50,
-) -> List[Dict[str, Any]]:
+    limit: int = Query(50, ge=1, le=200),
+):
     """
-    Return recent AI watchkeeper log entries for the UI.
+    Used by the UI to show the AI Watchkeeper log on the "AI Watchkeeper" tab.
     """
-    conn = get_connection()
-    try:
-        cur = conn.execute(
-            """
-            SELECT timestamp, details
-            FROM events
-            WHERE yacht_id = ? AND type = 'ai_log'
-            ORDER BY timestamp DESC
-            LIMIT ?
-            """,
-            (yacht_id, limit),
-        )
-        rows = cur.fetchall()
-    finally:
-        conn.close()
+    log_list = _init_log_list(yacht_id)
+    # newest last in storage, UI is fine with this order
+    slice_ = log_list[-limit:]
+    return slice_
 
-    logs: List[Dict[str, Any]] = []
-    for r in rows:
-        details = json.loads(r["details"] or "{}")
-        logs.append(
-            {
-                "generated_at": r["timestamp"],
-                "summary": details.get("summary") or "",
-                "actions": details.get("actions") or [],
-                "mode": details.get("mode"),
-            }
-        )
-
-    return logs
-
-
-# ---------- AI CHAT ENDPOINT (new) ----------
 
 @router.post("/chat", response_model=AIChatResponse)
-async def ai_chat(yacht_id: str, body: AIChatRequest) -> AIChatResponse:
+async def ai_chat(yacht_id: str, body: AIChatRequest):
     """
-    Simple chat with the AI watchkeeper.
-    - Uses recent AI logs as context.
-    - Answers in human language.
+    Lightweight AI chat endpoint for the "AI Chat" tab.
+    It pulls a small snapshot of current state to give context.
     """
-    # Pull recent AI logs as context
-    conn = get_connection()
-    try:
-        cur = conn.execute(
-            """
-            SELECT timestamp, details
-            FROM events
-            WHERE yacht_id = ? AND type = 'ai_log'
-            ORDER BY timestamp DESC
-            LIMIT 10
-            """,
-            (yacht_id,),
+    user_message = body.message.strip()
+    if not user_message:
+        raise HTTPException(status_code=400, detail="Empty message")
+
+    # Fetch a small context snapshot
+    async with httpx.AsyncClient(base_url=INTERNAL_BASE_URL, timeout=5.0) as http:
+        devices = await _fetch_json(http, "GET", f"/yachts/{yacht_id}/devices/")
+        events = await _fetch_json(
+            http, "GET", f"/yachts/{yacht_id}/events/", params={"limit": 10}
         )
-        rows = cur.fetchall()
-    finally:
-        conn.close()
 
-    summaries: List[str] = []
-    for r in rows:
-        details = json.loads(r["details"] or "{}")
-        summary = details.get("summary")
-        if summary:
-            summaries.append(f"{r['timestamp']}: {summary}")
+    # Keep context reasonably small
+    simple_devices = [
+        {
+            "id": d.get("id"),
+            "name": d.get("name"),
+            "zone": d.get("zone"),
+            "type": d.get("type"),
+            "state": d.get("state"),
+        }
+        for d in devices[:20]
+    ]
+    simple_events = [
+        {
+            "timestamp": e.get("timestamp"),
+            "type": e.get("type"),
+            "source": e.get("source"),
+            "details": e.get("details"),
+        }
+        for e in events[:10]
+    ]
 
-    context_text = "\n".join(summaries) if summaries else "No prior AI logs yet."
+    system_prompt = (
+        "You are the AI watchkeeper for a small yacht.\n"
+        "- Be concise and practical.\n"
+        "- You can use the current device states and recent events to answer questions.\n"
+        "- If the user asks for instructions, keep them simple and safety-focused.\n"
+        "- If you don't know something, say so and avoid guessing.\n"
+    )
+
+    context_blob = {
+        "yacht_id": yacht_id,
+        "devices": simple_devices,
+        "recent_events": simple_events,
+    }
 
     completion = client.chat.completions.create(
         model="gpt-5-nano",
         messages=[
             {
                 "role": "system",
-                "content": (
-                    "You are an AI watchkeeper for a small yacht. "
-                    "You are answering questions from the skipper. "
-                    "Be concise, clear and use human language instead of technical jargon. "
-                    "If you are not certain about something, say so."
-                ),
+                "content": system_prompt,
             },
             {
                 "role": "user",
                 "content": (
-                    "Recent AI watchkeeper logs:\n"
-                    f"{context_text}\n\n"
-                    f"Skipper's question: {body.message}"
+                    "Current yacht state (JSON):\n"
+                    + json_dumps_for_prompt(context_blob)
+                    + "\n\nUser question:\n"
+                    + user_message
                 ),
             },
         ],
     )
 
-    reply = completion.choices[0].message.content.strip()
-    created_at = datetime.now(timezone.utc).isoformat()
+    reply_text = completion.choices[0].message.content.strip()
+    return AIChatResponse(reply=reply_text)
 
-    # Store the Q&A as an event for history (optional, but useful)
-    conn = get_connection()
-    try:
-        conn.execute(
-            """
-            INSERT INTO events (yacht_id, timestamp, source, type, details)
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            (
-                yacht_id,
-                created_at,
-                "ai_chat",
-                "ai_chat",
-                json.dumps({"question": body.message, "answer": reply}),
-            ),
-        )
-        conn.commit()
-    finally:
-        conn.close()
 
-<<<<<<< HEAD
-  completion = client.chat.completions.create(
-    model="gpt-5-nano",
-    messages=[
-      {
-        "role": "system",
-        "content": (
-          "You are an AI watchkeeper for a small yacht. "
-          "You are answering questions from the skipper. "
-          "Be concise, clear and use human language instead of technical jargon. "
-          "If you are not certain about something, say so."
-        ),
-      },
-      {
-        "role": "user",
-        "content": (
-          "Recent AI watchkeeper logs:\n"
-          f"{context_text}\n\n"
-          f"Skipper's question: {body.message}"
-        ),
-      },
-    ],
-  )
-
-  reply = completion.choices[0].message.content.strip()
-  created_at = datetime.now(timezone.utc).isoformat()
-
-  # Store the Q&A as an event for history
-  conn = get_connection()
-  try:
-    conn.execute(
-      """
-      INSERT INTO events (yacht_id, timestamp, source, type, details)
-      VALUES (?, ?, ?, ?, ?)
-      """,
-      (
-        yacht_id,
-        created_at,
-        "ai_chat",
-        "ai_chat",
-        json.dumps({"question": body.message, "answer": reply}),
-      ),
-    )
-    conn.commit()
-  finally:
-    conn.close()
-
-  return AIChatResponse(reply=reply, created_at=created_at)
-=======
-    return {"applied": applied}
->>>>>>> parent of eab19c4 (1)
-=======
-    return AIChatResponse(reply=reply, created_at=created_at)
->>>>>>> parent of 58b4723 (2)
+# Small helper to keep JSON compact in prompts
+def json_dumps_for_prompt(obj: Any) -> str:
+    import json
+    return json.dumps(obj, separators=(",", ":"), default=str)
