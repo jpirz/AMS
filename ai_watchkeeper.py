@@ -24,6 +24,9 @@ POLL_INTERVAL_SECONDS = 5
 BILGE_MAX_PUMP_SECONDS = 30   # ON time before enforced rest
 BILGE_REST_SECONDS = 20       # Rest time before we allow AI to re-enable
 
+# Model name (override via AI_WATCHKEEPER_MODEL if you want to change later)
+MODEL = os.getenv("AI_WATCHKEEPER_MODEL", "gpt-5-nano")
+
 client = OpenAI()  # uses OPENAI_API_KEY from environment
 
 # ----------------------
@@ -479,7 +482,8 @@ async def send_ai_log(http: httpx.AsyncClient, snapshot: dict, command_payload: 
     }
 
     try:
-        await http.post(url, json=payload, timeout=5.0)
+        resp = await http.post(url, json=payload, timeout=5.0)
+        resp.raise_for_status()
     except Exception as e:
         # Don't ever break the watchkeeper if logging fails.
         print(f"[watchkeeper] Failed to send AI log: {e}")
@@ -628,7 +632,7 @@ async def call_model(snapshot: dict) -> dict:
     snapshot_for_model["occupancy"] = occupancy
 
     completion = client.chat.completions.create(
-        model="gpt-5-nano",  # default temperature=1
+        model=MODEL,  # default temperature=1
         response_format={"type": "json_object"},
         messages=[
             {

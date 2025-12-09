@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Marex 21 – Control Panel</title>
+  <title>Boat Control Panel</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root {
@@ -23,13 +23,11 @@
         #020617;
     }
 
-    /* LIGHT THEME – brighter, sky-blue style */
-
     body.light-theme {
       background:
-        radial-gradient(circle at top left, rgba(96,165,250,0.5), transparent 55%),
-        radial-gradient(circle at bottom right, rgba(56,189,248,0.4), transparent 55%),
-        #0b1120;
+        radial-gradient(circle at top left, rgba(148,163,184,0.45), transparent 55%),
+        radial-gradient(circle at bottom right, rgba(209,213,219,0.7), transparent 55%),
+        #e5e7eb;
       color: #0f172a;
     }
 
@@ -51,11 +49,11 @@
     }
 
     body.light-theme .panel-frame {
-      background-image:
-        repeating-linear-gradient(45deg, #0b1220 0, #0b1220 2px, #0f172a 2px, #0f172a 4px);
+      background-image: none;
+      background-color: #e5e7eb;
       box-shadow:
-        0 22px 50px rgba(15,23,42,0.9),
-        inset 0 0 0 1px rgba(148,163,184,0.4);
+        0 18px 40px rgba(15,23,42,0.25),
+        inset 0 0 0 1px rgba(148,163,184,0.8);
     }
 
     .panel-inner {
@@ -69,8 +67,8 @@
     }
 
     body.light-theme .panel-inner {
-      background: #0b1220;
-      border-color: #1f2937;
+      background: #f9fafb;
+      border-color: #d1d5db;
     }
 
     /* TOP BAR */
@@ -87,16 +85,16 @@
     }
 
     body.light-theme .top-bar {
-      background: rgba(15,23,42,0.9);
-      border-bottom-color: #1e293b;
-      box-shadow: 0 3px 10px rgba(15,23,42,0.9);
+      background: rgba(249,250,251,0.9);
+      border-bottom-color: #e5e7eb;
+      box-shadow: 0 2px 6px rgba(15,23,42,0.12);
       backdrop-filter: blur(10px);
     }
 
     .top-left {
       display: flex;
       flex-direction: column;
-      gap: 1px;
+      gap: 2px;
     }
 
     .title-main {
@@ -110,8 +108,23 @@
       font-size: 10px;
       color: #9ca3af;
     }
-    body.light-theme .title-main { color:#f9fafb; }
-    body.light-theme .title-sub { color:#cbd5f5; }
+    body.light-theme .title-main { color:#0f172a; }
+    body.light-theme .title-sub { color:#4b5563; }
+
+    .boat-selector {
+      margin-top: 2px;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 6px;
+      border: 1px solid #374151;
+      background: #020617;
+      color: #e5e7eb;
+    }
+    body.light-theme .boat-selector {
+      background:#f9fafb;
+      border-color:#d1d5db;
+      color:#111827;
+    }
 
     .top-center {
       display: flex;
@@ -139,13 +152,14 @@
       box-shadow:0 0 0 1px rgba(22,163,74,0.4);
     }
     body.light-theme .mode-pill {
-      background:#0b1120;
-      border-color:#1f2937;
-      color:#e5e7eb;
+      background:#e5e7eb;
+      border-color:#cbd5f5;
+      color:#0f172a;
     }
     body.light-theme .mode-pill.active {
       background:#22c55e;
       border-color:#22c55e;
+      color:#ecfdf5;
     }
 
     .top-right {
@@ -158,8 +172,8 @@
       align-items:flex-end;
     }
     .top-right span { color:#e5e7eb; }
-    body.light-theme .top-right { color:#e5e7eb; }
-    body.light-theme .top-right span { color:#f9fafb; }
+    body.light-theme .top-right { color:#4b5563; }
+    body.light-theme .top-right span { color:#111827; }
 
     .occ-controls {
       display:flex;
@@ -193,9 +207,9 @@
       box-shadow:0 0 0 1px rgba(248,113,113,0.5);
     }
     body.light-theme .occ-pill {
-      background:#0b1120;
-      border-color:#1f2937;
-      color:#e5e7eb;
+      background:#e5e7eb;
+      border-color:#cbd5f5;
+      color:#111827;
     }
 
     /* TABS */
@@ -209,8 +223,8 @@
       justify-content:center;
     }
     body.light-theme .tabs-bar {
-      background:#0b1220;
-      border-bottom-color:#1f2937;
+      background:#f3f4f6;
+      border-bottom-color:#d1d5db;
     }
 
     .tab-btn {
@@ -232,13 +246,14 @@
       border-color:#4b5563;
     }
     body.light-theme .tab-btn {
-      background:#0b1120;
-      border-color:#1f2937;
-      color:#e5e7eb;
+      background:#e5e7eb;
+      border-color:#cbd5f5;
+      color:#111827;
     }
     body.light-theme .tab-btn.active {
-      background:#1e293b;
-      border-color:#4b5563;
+      background:#ffffff;
+      border-color:#9ca3af;
+      color:#111827;
     }
 
     /* ALARM BANNER */
@@ -308,9 +323,9 @@
       overflow:hidden;
     }
     body.light-theme .card {
-      background:rgba(15,23,42,0.94);
-      border-color:#1f2937;
-      box-shadow:0 12px 32px rgba(30,64,175,0.7);
+      background:#ffffff;
+      border-color:#d1d5db;
+      box-shadow:0 10px 28px rgba(15,23,42,0.14);
     }
 
     .card-header {
@@ -323,8 +338,8 @@
       gap:4px;
     }
     body.light-theme .card-header {
-      background:#0b1220;
-      border-bottom-color:#1f2937;
+      background:#f9fafb;
+      border-bottom-color:#e5e7eb;
     }
 
     .card-title {
@@ -333,7 +348,7 @@
       letter-spacing:0.1em;
       color:#9ca3af;
     }
-    body.light-theme .card-title { color:#cbd5f5; }
+    body.light-theme .card-title { color:#4b5563; }
 
     .card-header-right {
       font-size:10px;
@@ -344,7 +359,7 @@
       flex-wrap:wrap;
       justify-content:flex-end;
     }
-    body.light-theme .card-header-right { color:#9ca3af; }
+    body.light-theme .card-header-right { color:#6b7280; }
 
     .card-body {
       flex:1;
@@ -367,9 +382,9 @@
     }
     .small-btn:hover { background:#111827; }
     body.light-theme .small-btn {
-      background:#1e293b;
-      border-color:#1e293b;
-      color:#f9fafb;
+      background:#e5e7eb;
+      border-color:#cbd5f5;
+      color:#111827;
     }
 
     /* SCENES */
@@ -394,10 +409,10 @@
       box-shadow:0 4px 10px rgba(0,0,0,0.5);
     }
     body.light-theme .scene-btn {
-      background:#0b1220;
-      border-color:#1f2937;
-      color:#e5e7eb;
-      box-shadow:0 4px 10px rgba(15,23,42,0.7);
+      background:#f3f4f6;
+      border-color:#d1d5db;
+      color:#111827;
+      box-shadow:0 4px 10px rgba(15,23,42,0.16);
     }
     .scene-name {
       font-weight:500;
@@ -411,7 +426,7 @@
       overflow:hidden;
       text-overflow:ellipsis;
     }
-    body.light-theme .scene-desc { color:#9ca3af; }
+    body.light-theme .scene-desc { color:#6b7280; }
 
     /* DEVICE GRID */
 
@@ -439,8 +454,8 @@
       min-height:34px;
     }
     body.light-theme .device-card {
-      background:#020617;
-      border-color:#1f2937;
+      background:#f9fafb;
+      border-color:#e5e7eb;
     }
 
     .device-name {
@@ -452,7 +467,7 @@
       text-overflow:ellipsis;
       margin-right:4px;
     }
-    body.light-theme .device-name { color:#f9fafb; }
+    body.light-theme .device-name { color:#111827; }
 
     .state-pill {
       min-width:46px;
@@ -484,9 +499,9 @@
       box-shadow:none;
     }
     body.light-theme .state-pill.off {
-      background:#020617;
-      border-color:#4b5563;
-      color:#cbd5f5;
+      background:#e5e7eb;
+      border-color:#cbd5f5;
+      color:#111827;
     }
 
     /* SENSORS */
@@ -507,8 +522,8 @@
       gap:4px;
     }
     body.light-theme .sensor-item {
-      background:#020617;
-      border-color:#1f2937;
+      background:#f9fafb;
+      border-color:#e5e7eb;
     }
     .sensor-main {
       display:flex;
@@ -520,12 +535,12 @@
       font-weight:500;
       color:#e5e7eb;
     }
-    body.light-theme .sensor-name { color:#f9fafb; }
+    body.light-theme .sensor-name { color:#111827; }
     .sensor-meta {
       font-size:10px;
       color:#6b7280;
     }
-    body.light-theme .sensor-meta { color:#9ca3af; }
+    body.light-theme .sensor-meta { color:#6b7280; }
 
     .sensor-graphic {
       flex:1;
@@ -563,9 +578,9 @@
       box-shadow:none;
     }
     body.light-theme .sensor-state {
-      background:#020617;
-      border-color:#1f2937;
-      color:#cbd5f5;
+      background:#e5e7eb;
+      border-color:#cbd5f5;
+      color:#111827;
     }
 
     .level-bar {
@@ -592,8 +607,8 @@
       background:linear-gradient(to right,#22c55e,#16a34a);
     }
     body.light-theme .level-bar {
-      background:#020617;
-      border-color:#1f2937;
+      background:#f9fafb;
+      border-color:#e5e7eb;
     }
 
     .bool-dot {
@@ -611,11 +626,11 @@
       background:#111827;
     }
     body.light-theme .bool-dot {
-      background:#020617;
-      border-color:#4b5563;
+      background:#e5e7eb;
+      border-color:#9ca3af;
     }
     body.light-theme .bool-dot.off {
-      background:#111827;
+      background:#cbd5f5;
     }
 
     /* EVENTS / ALARMS / AI LOGS */
@@ -625,17 +640,21 @@
       padding:3px 4px;
       border-bottom:1px dotted #1f2937;
     }
-    body.light-theme .event-item { border-bottom-color:#1f2937; }
+    body.light-theme .event-item { border-bottom-color:#d1d5db; }
     .event-meta { color:#6b7280; font-size:10px; }
     .event-type { color:#a5b4fc; font-weight:500; }
+
     .event-details {
       font-size:10px;
       color:#9ca3af;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
+      white-space:pre-wrap;
+      word-break:break-word;
+      overflow:visible;
+      text-overflow:clip;
     }
-    body.light-theme .event-details { color:#cbd5f5; }
+    body.light-theme .event-details {
+      color:#4b5563;
+    }
 
     .alarm-tag {
       display:inline-block;
@@ -652,6 +671,10 @@
       color:#7f1d1d;
       border-color:#fecaca;
     }
+
+    #aiChatMessages {
+      max-height:260px !important;
+    }
   </style>
 </head>
 <body class="dark-theme">
@@ -660,8 +683,9 @@
       <!-- TOP BAR -->
       <div class="top-bar">
         <div class="top-left">
-          <div class="title-main">Marex Flexi 21</div>
-          <div class="title-sub">Yacht ID: <span id="yachtName">marex-21-001</span></div>
+          <div class="title-main"><span id="yachtTitle">Boat Control Panel</span></div>
+          <div class="title-sub">Yacht ID: <span id="yachtName">–</span></div>
+          <select id="yachtSelect" class="boat-selector"></select>
         </div>
         <div class="top-center">
           <button class="mode-pill" data-scene="underway">Underway</button>
@@ -708,7 +732,6 @@
               </div>
             </div>
             <div class="card-body">
-              <!-- Scenes row hidden, but kept for JS -->
               <div id="sceneButtons" class="scene-row" style="display:none;"></div>
               <div id="deviceContainer" class="device-grid"></div>
             </div>
@@ -730,7 +753,7 @@
           </div>
         </div>
 
-        <!-- AI WATCHKEEPER (logs only) -->
+        <!-- AI WATCHKEEPER -->
         <div class="page" id="page-events">
           <div class="card">
             <div class="card-header">
@@ -798,8 +821,10 @@
   </div>
 
   <script>
-    const yachtId = "marex-21-001";
     const apiBase = "";
+
+    let yachtId = null;
+    let yachtMeta = null;
 
     const READONLY_IDS = new Set([
       "helm_anchor_scene_button",
@@ -821,6 +846,9 @@
     const themeToggleBtn   = document.getElementById("themeToggleBtn");
     const alarmBanner      = document.getElementById("alarmBanner");
     const alarmBannerText  = document.getElementById("alarmBannerText");
+    const yachtTitleEl     = document.getElementById("yachtTitle");
+    const yachtNameEl      = document.getElementById("yachtName");
+    const yachtSelectEl    = document.getElementById("yachtSelect");
 
     const aiLogsEl         = document.getElementById("aiLogs");
     const aiChatInput      = document.getElementById("aiChatInput");
@@ -830,7 +858,6 @@
     const occupancyLabel   = document.getElementById("occupancyLabel");
 
     document.getElementById("apiBase").textContent  = window.location.origin;
-    document.getElementById("yachtName").textContent = yachtId;
 
     /* THEME */
 
@@ -868,13 +895,14 @@
     document.querySelectorAll(".mode-pill").forEach(btn => {
       btn.addEventListener("click", () => {
         const sceneId = btn.getAttribute("data-scene");
+        if (!yachtId) return;
         activateScene(sceneId, btn.textContent.trim());
         document.querySelectorAll(".mode-pill").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
       });
     });
 
-    /* OCCUPANCY (ONBOARD / UNATTENDED) */
+    /* OCCUPANCY */
 
     let occupancyMode = localStorage.getItem("ams_occupancy") || "onboard";
 
@@ -890,6 +918,7 @@
     }
 
     async function sendOccupancyToBackend() {
+      if (!yachtId) return;
       try {
         await fetch(`${apiBase}/yachts/${yachtId}/ai/occupancy`, {
           method: "POST",
@@ -921,14 +950,27 @@
     /* HEADER BUTTONS */
 
     document.getElementById("refreshDevicesBtn").addEventListener("click", () => {
+      if (!yachtId) return;
       loadDevices();
       loadScenes();
     });
-    document.getElementById("refreshSensorsBtn").addEventListener("click", loadDevices);
-    document.getElementById("refreshEventsBtn").addEventListener("click", loadAiLogs);
-    document.getElementById("refreshAlarmsBtn").addEventListener("click", loadAlarmEvents);
+    document.getElementById("refreshSensorsBtn").addEventListener("click", () => {
+      if (!yachtId) return;
+      loadDevices();
+    });
+    document.getElementById("refreshEventsBtn").addEventListener("click", () => {
+      if (!yachtId) return;
+      loadAiLogs();
+    });
+    document.getElementById("refreshAlarmsBtn").addEventListener("click", () => {
+      if (!yachtId) return;
+      loadAlarmEvents();
+    });
     document.getElementById("ackAlarmsBtn").addEventListener("click", acknowledgeAlarms);
-    document.getElementById("clearAlarmsBtn").addEventListener("click", clearAlarmSensors);
+    document.getElementById("clearAlarmsBtn").addEventListener("click", () => {
+      if (!yachtId) return;
+      clearAlarmSensors();
+    });
 
     if (aiChatSendBtn) {
       aiChatSendBtn.addEventListener("click", sendAiChat);
@@ -1252,7 +1294,7 @@
       }
     }
 
-    /* ALARM BANNER LOGIC */
+    /* ALARM BANNER */
 
     function updateAlarmBanner(devices) {
       const active = devices.filter(d => isAlarmishSensor(d) && isDeviceInAlarmState(d));
@@ -1355,7 +1397,7 @@
       }
     }
 
-    /* EVENTS (for history) */
+    /* EVENTS HISTORY */
 
     async function loadEvents() {
       try {
@@ -1461,7 +1503,7 @@
         });
     }
 
-    /* AI WATCHKEEPER LOGS */
+    /* AI LOGS */
 
     async function loadAiLogs() {
       try {
@@ -1530,7 +1572,7 @@
     }
 
     async function sendAiChat() {
-      if (!aiChatInput) return;
+      if (!aiChatInput || !yachtId) return;
       const text = aiChatInput.value.trim();
       if (!text) return;
 
@@ -1557,17 +1599,90 @@
       }
     }
 
-    /* INIT */
+    /* YACHT SELECTOR */
 
-    (async function init() {
+    async function loadYachtsAndInitSelection() {
+      try {
+        const res = await fetch(`${apiBase}/yachts/`);
+        if (!res.ok) throw new Error("Failed to load yachts");
+        const yachts = await res.json();
+
+        yachtSelectEl.innerHTML = "";
+
+        if (!Array.isArray(yachts) || yachts.length === 0) {
+          const opt = document.createElement("option");
+          opt.value = "";
+          opt.textContent = "No yachts configured";
+          yachtSelectEl.appendChild(opt);
+          setLastAction("No yachts in registry");
+          return;
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        const urlYacht = params.get("yacht");
+
+        let initial = yachts[0];
+        if (urlYacht) {
+          const found = yachts.find(y => y.id === urlYacht);
+          if (found) initial = found;
+        }
+
+        yachts.forEach(y => {
+          const opt = document.createElement("option");
+          opt.value = y.id;
+          opt.textContent = `${y.name} (${y.id})`;
+          if (y.id === initial.id) opt.selected = true;
+          yachtSelectEl.appendChild(opt);
+        });
+
+        await selectYacht(initial.id);
+
+        yachtSelectEl.addEventListener("change", async () => {
+          const newId = yachtSelectEl.value;
+          await selectYacht(newId);
+        });
+      } catch (err) {
+        console.error(err);
+        setLastAction("Error loading yachts");
+      }
+    }
+
+    async function selectYacht(newYachtId) {
+      yachtId = newYachtId;
+      window.history.replaceState({}, "", `?yacht=${encodeURIComponent(yachtId)}`);
+
+      // Load meta for pretty name
+      try {
+        const res = await fetch(`${apiBase}/yachts/${yachtId}/meta`);
+        if (res.ok) {
+          yachtMeta = await res.json();
+          yachtNameEl.textContent = yachtMeta.id;
+          yachtTitleEl.textContent = yachtMeta.name;
+        } else {
+          yachtMeta = null;
+          yachtNameEl.textContent = yachtId;
+          yachtTitleEl.textContent = "Boat Control Panel";
+        }
+      } catch (err) {
+        console.error(err);
+        yachtMeta = null;
+        yachtNameEl.textContent = yachtId;
+        yachtTitleEl.textContent = "Boat Control Panel";
+      }
+
       await loadDevices();
       await loadScenes();
       await loadEvents();
       await loadAlarmEvents();
       await loadAiLogs();
-      // Push initial occupancy state to backend once on load
       sendOccupancyToBackend();
-      setLastAction("UI ready");
+      setLastAction(`Switched to yacht ${yachtId}`);
+    }
+
+    /* INIT */
+
+    (async function init() {
+      await loadYachtsAndInitSelection();
     })();
   </script>
 </body>

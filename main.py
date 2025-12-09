@@ -1,18 +1,21 @@
+# main.py
+
 import uvicorn
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-
-from app.db import init_db
-from app.api import devices, scenes, events, system, provision
-from app.routers import ai
 
 from collections import defaultdict, deque
 from typing import Deque, Dict, List, Optional
 from pydantic import BaseModel
 from datetime import datetime
 
+from app.db import init_db
+from app.api import devices, scenes, events, system, provision
+from app.routers import ai, yachts
+
+
 # ----------------------
-# AI log storage
+# AI watchkeeper logs (in-memory per yacht)
 # ----------------------
 
 class AIWatchkeeperLog(BaseModel):
@@ -26,18 +29,25 @@ AI_LOGS: Dict[str, Deque[AIWatchkeeperLog]] = defaultdict(
     lambda: deque(maxlen=200)
 )
 
+# ----------------------
+# App init
+# ----------------------
+
 # Initialize SQLite schema
 init_db()
 
 app = FastAPI(title="YachtOS Backend (SQLite + Multi-Yacht)")
 
-# API routers
+# API routers (existing)
 app.include_router(devices.router)
 app.include_router(scenes.router)
 app.include_router(events.router)
 app.include_router(system.router)
 app.include_router(provision.router)
 app.include_router(ai.router)
+
+# NEW: yachts router (for UI boat selector / metadata)
+app.include_router(yachts.router)
 
 # Static web UI (served from /web directory)
 app.mount("/ui", StaticFiles(directory="web", html=True), name="ui")
@@ -50,6 +60,8 @@ async def root():
         "ui": "/ui",
         "endpoints": [
             "/provision/yacht",
+            "/yachts",
+            "/yachts/{yacht_id}/meta",
             "/yachts/{yacht_id}/devices",
             "/yachts/{yacht_id}/scenes",
             "/yachts/{yacht_id}/events",
