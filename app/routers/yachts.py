@@ -1,38 +1,28 @@
 # app/routers/yachts.py
 
-from fastapi import APIRouter, HTTPException
+from typing import List, Dict, Any
+from fastapi import APIRouter
+
+from app.yacht_profiles import list_known_yachts, get_yacht_meta
 
 router = APIRouter(
     prefix="/yachts",
     tags=["yachts"],
 )
 
-# For now this is a simple in-code registry.
-# It lines up with the JSON you pasted: id + name.
-YACHTS = {
-    "marex-21-001": {
-      "id": "marex-21-001",
-      "name": "Marex Flexi 21 #001",
-    },
-    # Later you can add more:
-    # "sealine-25-001": {"id": "sealine-25-001", "name": "Sealine 25 #001"},
-}
+
+@router.get("/")
+async def list_yachts() -> List[Dict[str, Any]]:
+    """
+    List all explicitly configured yachts (from PROFILES).
+    Useful for a future 'boat selector' in the UI.
+    """
+    return list_known_yachts()
 
 
-@router.get("/", summary="List configured yachts")
-async def list_yachts():
+@router.get("/{yacht_id}/meta")
+async def yacht_meta(yacht_id: str) -> Dict[str, Any]:
     """
-    Used by the web UI to populate the boat selector.
+    Basic metadata + hardware config for a given yacht.
     """
-    return list(YACHTS.values())
-
-
-@router.get("/{yacht_id}/meta", summary="Get metadata for a single yacht")
-async def yacht_meta(yacht_id: str):
-    """
-    Basic metadata; used by UI for titles, etc.
-    """
-    yacht = YACHTS.get(yacht_id)
-    if not yacht:
-        raise HTTPException(status_code=404, detail="Unknown yacht_id")
-    return yacht
+    return get_yacht_meta(yacht_id)

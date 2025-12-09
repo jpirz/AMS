@@ -1,62 +1,45 @@
 # app/yacht_profiles/__init__.py
 
-from .default_cabin_cruiser_20_25ft import (
-    PROFILE_ID as DEFAULT_CABIN_CRUISER_PROFILE_ID,
-    get_devices_for_profile as _get_default_profile_devices,
-)
+from typing import Dict, Any, List
 
-# 1) Registry of which physical yacht uses which profile
-YACHT_REGISTRY = {
-    # id           # display name           # profile_id
-    "marex-21-001": {
-        "name": "Marex Flexi 21",
-        "profile_id": DEFAULT_CABIN_CRUISER_PROFILE_ID,
-    },
-    # Later:
-    # "sealine-25-001": {
-    #     "name": "Sealine 25",
-    #     "profile_id": DEFAULT_CABIN_CRUISER_PROFILE_ID,
-    # },
+from .default_cabin_cruiser_20_25ft import DEFAULT_CABIN_CRUISER_20_25FT
+
+# All known yacht profiles go here.
+# Keyed by yacht ID.
+PROFILES: Dict[str, Dict[str, Any]] = {
+    DEFAULT_CABIN_CRUISER_20_25FT["yacht"]["id"]: DEFAULT_CABIN_CRUISER_20_25FT,
 }
 
-# 2) Profile lookup
-def get_profile_for_yacht(yacht_id: str) -> str:
-    if yacht_id not in YACHT_REGISTRY:
-        raise KeyError(f"Unknown yacht_id={yacht_id!r}")
-    return YACHT_REGISTRY[yacht_id]["profile_id"]
+DEFAULT_YACHT_ID: str = DEFAULT_CABIN_CRUISER_20_25FT["yacht"]["id"]
 
 
-def get_yacht_meta(yacht_id: str) -> dict:
+def get_profile(yacht_id: str) -> Dict[str, Any]:
     """
-    Returns {id, name, profile_id} for one yacht,
-    or raises KeyError if unknown.
+    Return the profile for the given yacht_id, falling back to the default profile
+    if the ID is unknown.
     """
-    cfg = YACHT_REGISTRY[yacht_id]
-    return {
-        "id": yacht_id,
-        "name": cfg["name"],
-        "profile_id": cfg["profile_id"],
-    }
+    return PROFILES.get(yacht_id, DEFAULT_CABIN_CRUISER_20_25FT)
 
 
-def list_yachts() -> list[dict]:
+def get_devices_for_yacht(yacht_id: str) -> List[Dict[str, Any]]:
     """
-    Returns a list of {id, name, profile_id} for the UI yacht selector.
+    Helper used by routers to retrieve the device list for a yacht.
     """
-    return [get_yacht_meta(yid) for yid in YACHT_REGISTRY.keys()]
+    profile = get_profile(yacht_id)
+    return profile.get("devices", [])
 
 
-def get_devices_for_yacht(yacht_id: str) -> list[dict]:
+def get_scenes_for_yacht(yacht_id: str) -> List[Dict[str, Any]]:
     """
-    Main entry point the rest of the backend should use.
-    It decides which profile to load and returns the devices.
+    Helper for scenes router (if/when you wire it up).
     """
-    profile_id = get_profile_for_yacht(yacht_id)
+    profile = get_profile(yacht_id)
+    return profile.get("scenes", [])
 
-    if profile_id == DEFAULT_CABIN_CRUISER_PROFILE_ID:
-        return _get_default_profile_devices(profile_id)
 
-    # If you add more profiles later:
-    # elif profile_id == SOME_OTHER_PROFILE_ID: ...
-    else:
-        raise ValueError(f"Unsupported profile_id={profile_id!r}")
+def get_hardware_for_yacht(yacht_id: str) -> Dict[str, Any]:
+    """
+    Helper if you need bus / Modbus config elsewhere.
+    """
+    profile = get_profile(yacht_id)
+    return profile.get("hardware", {})

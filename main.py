@@ -10,8 +10,12 @@ from pydantic import BaseModel
 from datetime import datetime
 
 from app.db import init_db
-from app.api import devices, scenes, events, system, provision
-from app.routers import ai, yachts
+
+# Old-style modules that are still fine as-is
+from app.api import events, system, provision
+
+# New multi-yacht routers
+from app.routers import devices, scenes, ai, yachts
 
 
 # ----------------------
@@ -38,18 +42,20 @@ init_db()
 
 app = FastAPI(title="YachtOS Backend (SQLite + Multi-Yacht)")
 
-# API routers (existing)
-app.include_router(devices.router)
-app.include_router(scenes.router)
+# Routers: new multi-yacht ones first
+app.include_router(devices.router)   # /yachts/{yacht_id}/devices
+app.include_router(scenes.router)    # /yachts/{yacht_id}/scenes
+app.include_router(ai.router)        # /yachts/{yacht_id}/ai/...
+
+# Legacy / utility routers
 app.include_router(events.router)
 app.include_router(system.router)
 app.include_router(provision.router)
-app.include_router(ai.router)
 
-# NEW: yachts router (for UI boat selector / metadata)
-app.include_router(yachts.router)
+# Yachts metadata router
+app.include_router(yachts.router)    # /yachts, /yachts/{yacht_id}/meta
 
-# Static web UI (served from /web directory)
+# Static web UI
 app.mount("/ui", StaticFiles(directory="web", html=True), name="ui")
 
 

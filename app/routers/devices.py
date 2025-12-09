@@ -1,10 +1,12 @@
 # app/routers/devices.py
 
 from typing import Dict, Any
+
 from fastapi import APIRouter, HTTPException
-from app.yacht_profiles import get_devices_for_yacht
-from app.yacht_profiles import PROFILES
 from pydantic import BaseModel
+
+from app.yacht_profiles import get_devices_for_yacht
+from app.routers.events import record_event
 
 router = APIRouter(
     prefix="/yachts/{yacht_id}/devices",
@@ -54,6 +56,22 @@ async def set_device_state(yacht_id: str, device_id: str, body: DeviceStateIn):
     state = _ensure_state_for_yacht(yacht_id)
     state[device_id] = body.state
 
-    # TODO: here you also write to Modbus (coil/holding register) based on device.io
+    # Log event for history / alarms UI
+    record_event(
+        yacht_id=yacht_id,
+        event_type="device_state_changed",
+        source=body.source or "web_ui",
+        details={
+            "device_id": device_id,
+            "new_state": body.state,
+        },
+    )
 
-    return {"status": "ok", "yacht_id": yacht_id, "device_id": device_id, "state": body.state}
+    # TODO: here you also write to Modbus (coil/holding register) based on device.hw_id
+
+    return {
+        "status": "ok",
+        "yacht_id": yacht_id,
+        "device_id": device_id,
+        "state": body.state,
+    }
