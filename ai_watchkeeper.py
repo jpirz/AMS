@@ -15,7 +15,7 @@ from openai import OpenAI
 # ----------------------
 
 BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL", "http://127.0.0.1:8000")
-YACHT_ID = os.getenv("YACHT_ID", "marex-21-001")
+YACHT_ID = os.getenv("YACHT_ID", "21ft Cabin Cruiser")
 
 # How often to poll the backend
 POLL_INTERVAL_SECONDS = 5
