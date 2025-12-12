@@ -9,6 +9,8 @@
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: #050816;
       color: #e5e7eb;
+      /* 🔧 Change this to your background image file */
+      --bg-image-url: url("boat-bg.jpg");
     }
 
     body {
@@ -31,6 +33,20 @@
       color: #0f172a;
     }
 
+    /* 🔁 Optional opaque background image mode */
+    body.bg-image {
+      background-color: #000;
+      background-image: var(--bg-image-url);
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+    }
+    body.light-theme.bg-image {
+      background-color: #000;
+      background-image: var(--bg-image-url);
+    }
+
     .panel-frame {
       width: 100%;
       max-width: 1050px;
@@ -46,6 +62,7 @@
       display: flex;
       align-items: stretch;
       justify-content: center;
+      backdrop-filter: blur(4px);
     }
 
     body.light-theme .panel-frame {
@@ -304,13 +321,22 @@
     /* PAGE / CARD */
 
     .page-container {
-      flex:1;
-      padding:6px 8px 8px;
-      display:flex;
-      flex-direction:column;
+      flex: 1;
+      padding: 6px 8px 8px;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      min-height: 0;
     }
-    .page { flex:1; display:none; }
-    .page.active { display:flex; flex-direction:column; }
+
+    .page {
+      flex: 1;
+      display: none;
+    }
+    .page.active {
+      display: flex;
+      flex-direction: column;
+    }
 
     .card {
       background:#020617;
@@ -367,7 +393,7 @@
       display:flex;
       flex-direction:column;
       gap:5px;
-      overflow:hidden;
+      overflow:visible;
     }
 
     .small-btn {
@@ -447,11 +473,13 @@
       border-radius:7px;
       border:1px solid #111827;
       background:#020617;
-      padding:3px 4px;
+      padding:4px 6px;
       display:flex;
-      align-items:center;
-      justify-content:space-between;
-      min-height:34px;
+      flex-direction:column;
+      align-items:stretch;
+      justify-content:flex-start;
+      gap:4px;
+      min-height:52px;
     }
     body.light-theme .device-card {
       background:#f9fafb;
@@ -470,13 +498,14 @@
     body.light-theme .device-name { color:#111827; }
 
     .state-pill {
-      min-width:46px;
+      min-width:60px;
       text-align:center;
-      padding:2px 6px;
+      padding:3px 8px;
       border-radius:999px;
       font-size:10px;
       border:1px solid #374151;
       background:#111827;
+      align-self:flex-start;
     }
     .state-pill.on {
       background:#16a34a;
@@ -508,34 +537,38 @@
 
     .sensors-list {
       display:grid;
-      grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
-      gap:4px;
+      grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+      gap:6px;
     }
+
     .sensor-item {
-      padding:4px 5px;
+      padding:5px 6px;
       border-radius:6px;
       border:1px solid #111827;
       background:#020617;
       display:flex;
-      justify-content:space-between;
-      align-items:center;
+      flex-direction:column;
+      align-items:stretch;
       gap:4px;
     }
     body.light-theme .sensor-item {
       background:#f9fafb;
       border-color:#e5e7eb;
     }
+
     .sensor-main {
       display:flex;
       flex-direction:column;
       gap:1px;
     }
+
     .sensor-name {
       font-size:11px;
       font-weight:500;
       color:#e5e7eb;
     }
     body.light-theme .sensor-name { color:#111827; }
+
     .sensor-meta {
       font-size:10px;
       color:#6b7280;
@@ -543,22 +576,23 @@
     body.light-theme .sensor-meta { color:#6b7280; }
 
     .sensor-graphic {
-      flex:1;
-      margin:0 4px;
+      width:100%;
+      margin:2px 0 0 0;
       display:flex;
       align-items:center;
-      justify-content:center;
+      justify-content:flex-start;
     }
 
     .sensor-state {
       font-size:10px;
-      padding:4px 6px;
+      padding:3px 7px;
       border-radius:999px;
       border:1px solid #1f2937;
-      min-width:56px;
+      min-width:64px;
       text-align:center;
       background:#020617;
       color:#9ca3af;
+      align-self:flex-start;
     }
     .sensor-state.on {
       border-color:#22c55e;
@@ -700,7 +734,11 @@
             <button class="occ-pill" data-occupancy="onboard">Onboard</button>
             <button class="occ-pill" data-occupancy="unattended">Unattended</button>
           </div>
-          <button id="themeToggleBtn" class="small-btn">Light mode</button>
+          <div style="display:flex; gap:4px; margin-top:2px;">
+            <button id="themeToggleBtn" class="small-btn">Light mode</button>
+            <button id="bgToggleBtn" class="small-btn">BG: Default</button>
+            <button id="alarmMuteBtn" class="small-btn">Mute alarm</button>
+          </div>
         </div>
       </div>
 
@@ -762,7 +800,7 @@
                 <button id="refreshEventsBtn" class="small-btn">Refresh logs</button>
               </div>
             </div>
-            <div class="card-body" style="display:flex; flex-direction:column; gap:4px; overflow:hidden;">
+            <div class="card-body" style="display:flex; flex-direction:column; gap:4px;">
               <div id="aiLogs" class="events-list" style="flex:1; overflow-y:auto;"></div>
               <div id="eventsList" class="events-list" style="display:none;"></div>
             </div>
@@ -776,7 +814,7 @@
               <div class="card-title">AI Watchkeeper – Chat</div>
               <div class="card-header-right"></div>
             </div>
-            <div class="card-body" style="display:flex; flex-direction:column; gap:4px; overflow:hidden;">
+            <div class="card-body" style="display:flex; flex-direction:column; gap:4px;">
               <div id="aiChatPanel"
                    style="display:flex; flex-direction:column; gap:4px;">
                 <div style="font-size:10px; color:#9ca3af;">
@@ -820,6 +858,9 @@
     </div>
   </div>
 
+  <!-- 🔊 Audible alarm – put alarm.mp3 next to this HTML -->
+  <audio id="alarmAudio" src="alarm.mp3" preload="auto" loop></audio>
+
   <script>
     const apiBase = "";
 
@@ -844,6 +885,8 @@
     const lastActionEl     = document.getElementById("lastAction");
     const summaryLineEl    = document.getElementById("summaryLine");
     const themeToggleBtn   = document.getElementById("themeToggleBtn");
+    const bgToggleBtn      = document.getElementById("bgToggleBtn");
+    const alarmMuteBtn     = document.getElementById("alarmMuteBtn");
     const alarmBanner      = document.getElementById("alarmBanner");
     const alarmBannerText  = document.getElementById("alarmBannerText");
     const yachtTitleEl     = document.getElementById("yachtTitle");
@@ -857,6 +900,8 @@
 
     const occupancyLabel   = document.getElementById("occupancyLabel");
 
+    const alarmAudio       = document.getElementById("alarmAudio");
+
     document.getElementById("apiBase").textContent  = window.location.origin;
 
     /* THEME */
@@ -864,7 +909,91 @@
     let currentTheme = localStorage.getItem("ams_theme") || "dark";
     document.body.classList.remove("dark-theme","light-theme");
     document.body.classList.add(currentTheme + "-theme");
+
+    /* BACKGROUND MODE + ALARM MUTE + ALARM HISTORY */
+
+    let bgMode        = localStorage.getItem("ams_bg_mode") || "gradient";
+    let alarmMuted    = localStorage.getItem("ams_alarm_muted") === "true";
+    let alarmSoundPlaying = false;
+
+    let sessionAlarmHistory = [];
+    let lastAlarmStateByDevice = {};
+
+    function getAlarmHistoryStorageKey() {
+      return yachtId ? `ams_alarm_history_${yachtId}` : "ams_alarm_history_default";
+    }
+
+    function loadAlarmHistoryForCurrentYacht() {
+      try {
+        const raw = localStorage.getItem(getAlarmHistoryStorageKey());
+        sessionAlarmHistory = raw ? JSON.parse(raw) : [];
+      } catch (err) {
+        console.error("Error loading alarm history from storage", err);
+        sessionAlarmHistory = [];
+      }
+    }
+
+    function saveAlarmHistoryForCurrentYacht() {
+      try {
+        const trimmed = sessionAlarmHistory.slice(-200);
+        localStorage.setItem(getAlarmHistoryStorageKey(), JSON.stringify(trimmed));
+      } catch (err) {
+        console.error("Error saving alarm history to storage", err);
+      }
+    }
+
+    function recordAlarmsFromDevices(devices) {
+      if (!yachtId || !Array.isArray(devices)) return;
+      const nowIso = new Date().toISOString();
+
+      devices.forEach(d => {
+        const isAlarmish = isAlarmishSensor(d);
+        const inAlarm = isAlarmish && isDeviceInAlarmState(d);
+        const prev = lastAlarmStateByDevice[d.id];
+
+        // log only on transition into alarm (rising edge)
+        if (inAlarm && !prev) {
+          const entry = {
+            type: "DEVICE_ALARM",
+            timestamp: nowIso,
+            source: "device_state",
+            details: {
+              yacht_id: yachtId,
+              device_id: d.id,
+              name: d.name,
+              zone: d.zone,
+              state: d.state
+            }
+          };
+          sessionAlarmHistory.push(entry);
+        }
+
+        lastAlarmStateByDevice[d.id] = inAlarm;
+      });
+
+      saveAlarmHistoryForCurrentYacht();
+    }
+
+    function updateThemeButtonLabel() {
+      themeToggleBtn.textContent = currentTheme === "dark" ? "Light mode" : "Dark mode";
+    }
+
+    function updateBackgroundMode() {
+      const isImage = bgMode === "image";
+      document.body.classList.toggle("bg-image", isImage);
+      if (bgToggleBtn) {
+        bgToggleBtn.textContent = isImage ? "BG: Image" : "BG: Default";
+      }
+    }
+
+    function updateAlarmMuteButtonLabel() {
+      if (!alarmMuteBtn) return;
+      alarmMuteBtn.textContent = alarmMuted ? "Unmute alarm" : "Mute alarm";
+    }
+
     updateThemeButtonLabel();
+    updateBackgroundMode();
+    updateAlarmMuteButtonLabel();
 
     themeToggleBtn.addEventListener("click", () => {
       currentTheme = currentTheme === "dark" ? "light" : "dark";
@@ -874,8 +1003,44 @@
       updateThemeButtonLabel();
     });
 
-    function updateThemeButtonLabel() {
-      themeToggleBtn.textContent = currentTheme === "dark" ? "Light mode" : "Dark mode";
+    if (bgToggleBtn) {
+      bgToggleBtn.addEventListener("click", () => {
+        bgMode = bgMode === "image" ? "gradient" : "image";
+        localStorage.setItem("ams_bg_mode", bgMode);
+        updateBackgroundMode();
+      });
+    }
+
+    if (alarmMuteBtn) {
+      alarmMuteBtn.addEventListener("click", () => {
+        alarmMuted = !alarmMuted;
+        localStorage.setItem("ams_alarm_muted", alarmMuted ? "true" : "false");
+        updateAlarmMuteButtonLabel();
+        if (alarmMuted) {
+          stopAlarmSound();
+          setLastAction("Alarm muted");
+        } else {
+          setLastAction("Alarm unmuted");
+        }
+      });
+    }
+
+    function startAlarmSound() {
+      if (!alarmAudio || alarmMuted || alarmSoundPlaying) return;
+      alarmAudio.play()
+        .then(() => {
+          alarmSoundPlaying = true;
+        })
+        .catch(err => {
+          console.warn("Alarm sound play blocked by browser:", err);
+        });
+    }
+
+    function stopAlarmSound() {
+      if (!alarmAudio || !alarmSoundPlaying) return;
+      alarmAudio.pause();
+      alarmAudio.currentTime = 0;
+      alarmSoundPlaying = false;
     }
 
     /* TABS */
@@ -1067,6 +1232,10 @@
         const res = await fetch(`${apiBase}/yachts/${yachtId}/devices/`);
         if (!res.ok) throw new Error("Failed to load devices");
         const devices = await res.json();
+
+        // 🔐 record alarms into persistent local history
+        recordAlarmsFromDevices(devices);
+
         renderDevices(devices);
         renderSensors(devices);
         updateSummary(devices);
@@ -1294,7 +1463,7 @@
       }
     }
 
-    /* ALARM BANNER */
+    /* ALARM BANNER + SOUND */
 
     function updateAlarmBanner(devices) {
       const active = devices.filter(d => isAlarmishSensor(d) && isDeviceInAlarmState(d));
@@ -1304,10 +1473,12 @@
       if (active.length === 0) {
         alarmBanner.classList.add("ok");
         alarmBannerText.textContent = "No active alarms.";
+        stopAlarmSound();
       } else {
         alarmBanner.classList.add("alarm");
         const names = active.map(d => d.name || d.id).join(" · ");
         alarmBannerText.textContent = names;
+        startAlarmSound();
       }
     }
 
@@ -1414,7 +1585,7 @@
     function renderEvents(events) {
       if (!eventsList) return;
       eventsList.innerHTML = "";
-      events.slice(0, 15).forEach(ev => {
+      (events || []).slice(0, 15).forEach(ev => {
         const item = document.createElement("div");
         item.className = "event-item";
 
@@ -1452,11 +1623,21 @@
 
     async function loadAlarmEvents() {
       try {
-        const res = await fetch(`${apiBase}/yachts/${yachtId}/events?limit=200`);
-        if (!res.ok) throw new Error("Failed to load alarm events");
-        const events = await res.json();
-        const alarms = events.filter(isAlarmEvent);
-        renderAlarmEvents(alarms);
+        let alarmsFromBackend = [];
+        try {
+          const res = await fetch(`${apiBase}/yachts/${yachtId}/events?limit=200`);
+          if (res.ok) {
+            const events = await res.json();
+            alarmsFromBackend = Array.isArray(events) ? events.filter(isAlarmEvent) : [];
+          }
+        } catch (inner) {
+          console.error("Error loading alarm events from backend", inner);
+        }
+
+        // combine backend events with locally logged history
+        const combined = [...alarmsFromBackend, ...sessionAlarmHistory];
+        renderAlarmEvents(combined);
+        setLastAction("Alarm history refreshed");
       } catch (err) {
         console.error(err);
         setLastAction("Error loading alarm history");
@@ -1522,7 +1703,7 @@
       if (!aiLogsEl) return;
       aiLogsEl.innerHTML = "";
 
-      logs.forEach(log => {
+      (logs || []).forEach(log => {
         const item = document.createElement("div");
         item.className = "event-item";
 
@@ -1542,7 +1723,7 @@
         aiLogsEl.appendChild(item);
       });
 
-      if (logs.length === 0) {
+      if (!logs || logs.length === 0) {
         const empty = document.createElement("div");
         empty.className = "event-item";
         empty.textContent = "No AI logs yet.";
@@ -1651,7 +1832,10 @@
       yachtId = newYachtId;
       window.history.replaceState({}, "", `?yacht=${encodeURIComponent(yachtId)}`);
 
-      // Load meta for pretty name
+      // reset per-yacht alarm state tracking & load stored history
+      lastAlarmStateByDevice = {};
+      loadAlarmHistoryForCurrentYacht();
+
       try {
         const res = await fetch(`${apiBase}/yachts/${yachtId}/meta`);
         if (res.ok) {
