@@ -135,7 +135,7 @@ DEFAULT_CABIN_CRUISER_20_25FT = {
             "type": "switch",
             "state": False,
             "hw_id": "modbus:io_main:coil:10",
-            "ai_control": "never",
+            "ai_control": "never",  # model can't touch; deterministic logic only
             "max_runtime_seconds": None,
             "requires_human_ack": True,
         },
@@ -205,6 +205,9 @@ DEFAULT_CABIN_CRUISER_20_25FT = {
             "max_runtime_seconds": None,
             "requires_human_ack": True,
         },
+
+        # --- Digital inputs (sensors / buttons) ---
+
         {
             "id": "bilge_float_high",
             "name": "Bilge High Level Float",
@@ -249,6 +252,31 @@ DEFAULT_CABIN_CRUISER_20_25FT = {
             "max_runtime_seconds": None,
             "requires_human_ack": False,
         },
+
+        # NEW demo sensors
+        {
+            "id": "motion_cockpit",
+            "name": "Cockpit Motion Sensor",
+            "zone": "Cockpit",
+            "type": "sensor",
+            "state": None,
+            "hw_id": "modbus:io_main:input:8",
+            "ai_control": "never",
+            "max_runtime_seconds": None,
+            "requires_human_ack": False,
+        },
+        {
+            "id": "smoke_cabin",
+            "name": "Cabin Smoke Detector",
+            "zone": "Cabin",
+            "type": "sensor",
+            "state": None,
+            "hw_id": "modbus:io_main:input:9",
+            "ai_control": "never",
+            "max_runtime_seconds": None,
+            "requires_human_ack": True,
+        },
+
         {
             "id": "helm_anchor_scene_button",
             "name": "Helm “At Anchor” Button",
@@ -293,6 +321,9 @@ DEFAULT_CABIN_CRUISER_20_25FT = {
             "max_runtime_seconds": None,
             "requires_human_ack": False,
         },
+
+        # --- Analogue / register-based sensors ---
+
         {
             "id": "fresh_water_tank_level",
             "name": "Fresh Water Tank Level",
