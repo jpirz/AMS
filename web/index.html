@@ -43,6 +43,7 @@
       background-attachment: fixed;
     }
     body.light-theme.bg-image {
+      /* same image even in light theme, keeps it clean */
       background-color: #000;
       background-image: var(--bg-image-url);
     }
@@ -62,7 +63,7 @@
       display: flex;
       align-items: stretch;
       justify-content: center;
-      backdrop-filter: blur(4px);
+      backdrop-filter: blur(4px); /* slight frosted look over photo */
     }
 
     body.light-theme .panel-frame {
@@ -325,7 +326,7 @@
       padding: 6px 8px 8px;
       display: flex;
       flex-direction: column;
-      overflow-y: auto;
+      overflow-y: auto;   /* scrolling enabled */
       min-height: 0;
     }
 
@@ -700,10 +701,20 @@
       color:#fee2e2;
       border:1px solid #b91c1c;
     }
+    .alarm-tag.clear {
+      background:#052e16;
+      color:#bbf7d0;
+      border-color:#16a34a;
+    }
     body.light-theme .alarm-tag {
       background:#fee2e2;
       color:#7f1d1d;
       border-color:#fecaca;
+    }
+    body.light-theme .alarm-tag.clear {
+      background:#ecfdf5;
+      color:#166534;
+      border-color:#bbf7d0;
     }
 
     #aiChatMessages {
@@ -736,8 +747,10 @@
           </div>
           <div style="display:flex; gap:4px; margin-top:2px;">
             <button id="themeToggleBtn" class="small-btn">Light mode</button>
+            <!-- 🔁 background toggle -->
             <button id="bgToggleBtn" class="small-btn">BG: Default</button>
-            <button id="alarmMuteBtn" class="small-btn">Mute alarm</button>
+            <!-- 🔇 NEW: mute alarm toggle -->
+            <button id="muteAlarmBtn" class="small-btn">Alarm: Sound ON</button>
           </div>
         </div>
       </div>
@@ -858,9 +871,6 @@
     </div>
   </div>
 
-  <!-- 🔊 Audible alarm – put alarm.mp3 next to this HTML -->
-  <audio id="alarmAudio" src="alarm.mp3" preload="auto" loop></audio>
-
   <script>
     const apiBase = "";
 
@@ -886,7 +896,7 @@
     const summaryLineEl    = document.getElementById("summaryLine");
     const themeToggleBtn   = document.getElementById("themeToggleBtn");
     const bgToggleBtn      = document.getElementById("bgToggleBtn");
-    const alarmMuteBtn     = document.getElementById("alarmMuteBtn");
+    const muteAlarmBtn     = document.getElementById("muteAlarmBtn");
     const alarmBanner      = document.getElementById("alarmBanner");
     const alarmBannerText  = document.getElementById("alarmBannerText");
     const yachtTitleEl     = document.getElementById("yachtTitle");
@@ -900,8 +910,6 @@
 
     const occupancyLabel   = document.getElementById("occupancyLabel");
 
-    const alarmAudio       = document.getElementById("alarmAudio");
-
     document.getElementById("apiBase").textContent  = window.location.origin;
 
     /* THEME */
@@ -910,69 +918,9 @@
     document.body.classList.remove("dark-theme","light-theme");
     document.body.classList.add(currentTheme + "-theme");
 
-    /* BACKGROUND MODE + ALARM MUTE + ALARM HISTORY */
+    /* BACKGROUND MODE */
 
-    let bgMode        = localStorage.getItem("ams_bg_mode") || "gradient";
-    let alarmMuted    = localStorage.getItem("ams_alarm_muted") === "true";
-    let alarmSoundPlaying = false;
-
-    let sessionAlarmHistory = [];
-    let lastAlarmStateByDevice = {};
-
-    function getAlarmHistoryStorageKey() {
-      return yachtId ? `ams_alarm_history_${yachtId}` : "ams_alarm_history_default";
-    }
-
-    function loadAlarmHistoryForCurrentYacht() {
-      try {
-        const raw = localStorage.getItem(getAlarmHistoryStorageKey());
-        sessionAlarmHistory = raw ? JSON.parse(raw) : [];
-      } catch (err) {
-        console.error("Error loading alarm history from storage", err);
-        sessionAlarmHistory = [];
-      }
-    }
-
-    function saveAlarmHistoryForCurrentYacht() {
-      try {
-        const trimmed = sessionAlarmHistory.slice(-200);
-        localStorage.setItem(getAlarmHistoryStorageKey(), JSON.stringify(trimmed));
-      } catch (err) {
-        console.error("Error saving alarm history to storage", err);
-      }
-    }
-
-    function recordAlarmsFromDevices(devices) {
-      if (!yachtId || !Array.isArray(devices)) return;
-      const nowIso = new Date().toISOString();
-
-      devices.forEach(d => {
-        const isAlarmish = isAlarmishSensor(d);
-        const inAlarm = isAlarmish && isDeviceInAlarmState(d);
-        const prev = lastAlarmStateByDevice[d.id];
-
-        // log only on transition into alarm (rising edge)
-        if (inAlarm && !prev) {
-          const entry = {
-            type: "DEVICE_ALARM",
-            timestamp: nowIso,
-            source: "device_state",
-            details: {
-              yacht_id: yachtId,
-              device_id: d.id,
-              name: d.name,
-              zone: d.zone,
-              state: d.state
-            }
-          };
-          sessionAlarmHistory.push(entry);
-        }
-
-        lastAlarmStateByDevice[d.id] = inAlarm;
-      });
-
-      saveAlarmHistoryForCurrentYacht();
-    }
+    let bgMode = localStorage.getItem("ams_bg_mode") || "gradient";
 
     function updateThemeButtonLabel() {
       themeToggleBtn.textContent = currentTheme === "dark" ? "Light mode" : "Dark mode";
@@ -986,14 +934,8 @@
       }
     }
 
-    function updateAlarmMuteButtonLabel() {
-      if (!alarmMuteBtn) return;
-      alarmMuteBtn.textContent = alarmMuted ? "Unmute alarm" : "Mute alarm";
-    }
-
     updateThemeButtonLabel();
     updateBackgroundMode();
-    updateAlarmMuteButtonLabel();
 
     themeToggleBtn.addEventListener("click", () => {
       currentTheme = currentTheme === "dark" ? "light" : "dark";
@@ -1011,36 +953,221 @@
       });
     }
 
-    if (alarmMuteBtn) {
-      alarmMuteBtn.addEventListener("click", () => {
+    /* 🔇 MUTE ALARM (localStorage) + 🔊 audible alarm */
+
+    let alarmMuted = localStorage.getItem("ams_alarm_mute") === "1";
+
+    function updateMuteAlarmUI() {
+      if (!muteAlarmBtn) return;
+      muteAlarmBtn.textContent = alarmMuted ? "Alarm: MUTED" : "Alarm: Sound ON";
+      muteAlarmBtn.style.opacity = alarmMuted ? "0.85" : "1";
+    }
+
+    if (muteAlarmBtn) {
+      muteAlarmBtn.addEventListener("click", () => {
         alarmMuted = !alarmMuted;
-        localStorage.setItem("ams_alarm_muted", alarmMuted ? "true" : "false");
-        updateAlarmMuteButtonLabel();
-        if (alarmMuted) {
-          stopAlarmSound();
-          setLastAction("Alarm muted");
-        } else {
-          setLastAction("Alarm unmuted");
-        }
+        localStorage.setItem("ams_alarm_mute", alarmMuted ? "1" : "0");
+        updateMuteAlarmUI();
+        if (alarmMuted) stopAlarmBeep();
+        // if unmuted and alarms are active, the next refresh will re-start beeping
       });
     }
 
-    function startAlarmSound() {
-      if (!alarmAudio || alarmMuted || alarmSoundPlaying) return;
-      alarmAudio.play()
-        .then(() => {
-          alarmSoundPlaying = true;
-        })
-        .catch(err => {
-          console.warn("Alarm sound play blocked by browser:", err);
-        });
+    updateMuteAlarmUI();
+
+    // Simple beep loop (browser requires user interaction before audio works)
+    let audioCtx = null;
+    let alarmBeepTimer = null;
+    let wantBeep = false;
+
+    function armAudio() {
+      if (audioCtx) return;
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      audioCtx = new Ctx();
     }
 
-    function stopAlarmSound() {
-      if (!alarmAudio || !alarmSoundPlaying) return;
-      alarmAudio.pause();
-      alarmAudio.currentTime = 0;
-      alarmSoundPlaying = false;
+    // arm on first user interaction
+    document.addEventListener("pointerdown", () => {
+      armAudio();
+      if (audioCtx && audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
+      if (wantBeep && !alarmMuted) startAlarmBeep();
+    }, { once: true });
+
+    function beepOnce(durationSec = 0.18, freq = 880) {
+      if (!audioCtx) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = freq;
+        gain.gain.value = 0.0001;
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.linearRampToValueAtTime(0.08, now + 0.01);
+        gain.gain.linearRampToValueAtTime(0.0001, now + durationSec);
+
+        osc.start(now);
+        osc.stop(now + durationSec + 0.02);
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    function startAlarmBeep() {
+      if (!audioCtx) return; // will start after first click
+      if (alarmBeepTimer) return;
+      beepOnce();
+      alarmBeepTimer = setInterval(() => beepOnce(), 1100);
+    }
+
+    function stopAlarmBeep() {
+      if (alarmBeepTimer) {
+        clearInterval(alarmBeepTimer);
+        alarmBeepTimer = null;
+      }
+    }
+
+    function updateAudibleAlarm(activeCount) {
+      wantBeep = activeCount > 0;
+      if (alarmMuted || activeCount === 0) {
+        stopAlarmBeep();
+        return;
+      }
+      if (!audioCtx) {
+        // will arm on first click; keep wantBeep=true so it starts once armed
+        return;
+      }
+      if (audioCtx.state === "suspended") {
+        audioCtx.resume().catch(() => {});
+      }
+      startAlarmBeep();
+    }
+
+    /* ✅ Alarm history that DOES NOT disappear (stored in localStorage) */
+
+    function alarmHistoryKey() {
+      return `ams_alarm_history_${yachtId || "none"}`;
+    }
+    function lastActiveKey() {
+      return `ams_alarm_last_active_${yachtId || "none"}`;
+    }
+
+    function loadAlarmHistoryLocal() {
+      try {
+        const raw = localStorage.getItem(alarmHistoryKey());
+        const arr = raw ? JSON.parse(raw) : [];
+        return Array.isArray(arr) ? arr : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveAlarmHistoryLocal(list) {
+      try {
+        localStorage.setItem(alarmHistoryKey(), JSON.stringify(list.slice(0, 400)));
+      } catch {
+        // ignore
+      }
+    }
+
+    function makeEventKey(ev) {
+      // stable-ish de-dupe key
+      const detailsStr = (() => { try { return JSON.stringify(ev.details || {}); } catch { return ""; } })();
+      return `${ev.timestamp || ""}|${ev.type || ""}|${ev.source || ""}|${detailsStr}`;
+    }
+
+    function mergeIntoAlarmHistory(newEvents) {
+      const existing = loadAlarmHistoryLocal();
+      const seen = new Set(existing.map(e => e._key || makeEventKey(e)));
+
+      for (const ev of newEvents) {
+        const k = ev._key || makeEventKey(ev);
+        if (!seen.has(k)) {
+          ev._key = k;
+          existing.push(ev);
+          seen.add(k);
+        }
+      }
+
+      existing.sort((a, b) => String(b.timestamp).localeCompare(String(a.timestamp)));
+      saveAlarmHistoryLocal(existing);
+      return existing;
+    }
+
+    function trackAlarmTransitions(devices, activeNow) {
+      if (!yachtId) return;
+
+      const nowIso = new Date().toISOString();
+      const activeIds = new Set(activeNow.map(d => d.id));
+
+      let prev = [];
+      try {
+        prev = JSON.parse(localStorage.getItem(lastActiveKey()) || "[]");
+        if (!Array.isArray(prev)) prev = [];
+      } catch { prev = []; }
+
+      const prevSet = new Set(prev);
+
+      const newOn = [];
+      const newOff = [];
+
+      for (const id of activeIds) {
+        if (!prevSet.has(id)) newOn.push(id);
+      }
+      for (const id of prevSet) {
+        if (!activeIds.has(id)) newOff.push(id);
+      }
+
+      const byId = new Map(devices.map(d => [d.id, d]));
+
+      const events = [];
+
+      for (const id of newOn) {
+        const d = byId.get(id) || { id };
+        events.push({
+          timestamp: nowIso,
+          type: "ALARM_ON",
+          source: "web_ui",
+          details: {
+            device_id: d.id,
+            name: d.name,
+            zone: d.zone,
+            state: d.state
+          }
+        });
+      }
+
+      for (const id of newOff) {
+        const d = byId.get(id) || { id };
+        events.push({
+          timestamp: nowIso,
+          type: "ALARM_CLEAR",
+          source: "web_ui",
+          details: {
+            device_id: d.id,
+            name: d.name,
+            zone: d.zone
+          }
+        });
+      }
+
+      if (events.length > 0) {
+        mergeIntoAlarmHistory(events);
+        if (isAlarmsPageActive()) {
+          renderAlarmEvents(loadAlarmHistoryLocal());
+        }
+      }
+
+      localStorage.setItem(lastActiveKey(), JSON.stringify([...activeIds]));
+    }
+
+    function isAlarmsPageActive() {
+      const p = document.getElementById("page-alarms");
+      return !!(p && p.classList.contains("active"));
     }
 
     /* TABS */
@@ -1052,6 +1179,11 @@
         btn.classList.add("active");
         document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
         document.getElementById("page-" + page).classList.add("active");
+
+        // if user enters alarms page, render local history immediately
+        if (page === "alarms" && yachtId) {
+          renderAlarmEvents(loadAlarmHistoryLocal());
+        }
       });
     });
 
@@ -1164,6 +1296,9 @@
 
       if (ALARM_IDS.has(dev.id)) return true;
 
+      // Also treat obvious alarm-ish OUTPUTS (eg bilge pump running) as alarm candidates
+      if (dev.type && String(dev.type).toLowerCase() === "pump" && hay.includes("bilge")) return true;
+
       return (
         hay.includes("bilge") ||
         hay.includes("battery") ||
@@ -1177,7 +1312,8 @@
         hay.includes("smoke") ||
         hay.includes("fire") ||
         hay.includes("co2") ||
-        hay.includes("leak")
+        hay.includes("leak") ||
+        hay.includes("water")
       );
     }
 
@@ -1188,6 +1324,9 @@
       const hay = id + " " + name;
 
       if (ALARM_IDS.has(dev.id) && v === true) return true;
+
+      // bilge pump running = alarm-ish (so it stays visible + logged)
+      if ((dev.type || "").toLowerCase() === "pump" && hay.includes("bilge") && v === true) return true;
 
       if (typeof v === "boolean") {
         if (hay.includes("shore") || hay.includes("ac_input")) {
@@ -1232,14 +1371,14 @@
         const res = await fetch(`${apiBase}/yachts/${yachtId}/devices/`);
         if (!res.ok) throw new Error("Failed to load devices");
         const devices = await res.json();
-
-        // 🔐 record alarms into persistent local history
-        recordAlarmsFromDevices(devices);
-
         renderDevices(devices);
         renderSensors(devices);
         updateSummary(devices);
-        updateAlarmBanner(devices);
+
+        const active = updateAlarmBanner(devices);     // returns active list
+        updateAudibleAlarm(active.length);             // 🔊 beep if needed (unless muted)
+        trackAlarmTransitions(devices, active);         // ✅ log alarm ON/CLEAR into localStorage
+
         setLastAction("Devices refreshed");
       } catch (err) {
         console.error(err);
@@ -1463,7 +1602,7 @@
       }
     }
 
-    /* ALARM BANNER + SOUND */
+    /* ALARM BANNER */
 
     function updateAlarmBanner(devices) {
       const active = devices.filter(d => isAlarmishSensor(d) && isDeviceInAlarmState(d));
@@ -1473,13 +1612,13 @@
       if (active.length === 0) {
         alarmBanner.classList.add("ok");
         alarmBannerText.textContent = "No active alarms.";
-        stopAlarmSound();
       } else {
         alarmBanner.classList.add("alarm");
         const names = active.map(d => d.name || d.id).join(" · ");
         alarmBannerText.textContent = names;
-        startAlarmSound();
       }
+
+      return active; // ✅ used for history + audible alarm
     }
 
     function acknowledgeAlarms() {
@@ -1585,7 +1724,7 @@
     function renderEvents(events) {
       if (!eventsList) return;
       eventsList.innerHTML = "";
-      (events || []).slice(0, 15).forEach(ev => {
+      events.slice(0, 15).forEach(ev => {
         const item = document.createElement("div");
         item.className = "event-item";
 
@@ -1605,7 +1744,7 @@
       });
     }
 
-    /* ALARM HISTORY */
+    /* ALARM HISTORY (backend + local merged) */
 
     function isAlarmEvent(ev) {
       const typeStr = (ev.type || "").toLowerCase();
@@ -1613,34 +1752,44 @@
       const srcStr = (ev.source || "").toLowerCase();
       const haystack = `${typeStr} ${detailStr} ${srcStr}`;
 
+      // allow both your UI-generated and backend ones
+      if (haystack.includes("alarm_on") || haystack.includes("alarm_clear")) return true;
+
+      // generic alarm-ish matching
       if (haystack.includes("alarm")) return true;
       if (haystack.includes("bilge")) return true;
-      if (haystack.includes("battery_low") || haystack.includes("battery low")) return true;
-      if (haystack.includes("fuel") && haystack.includes("low")) return true;
+      if (haystack.includes("battery")) return true;
+      if (haystack.includes("fuel") && (haystack.includes("low") || haystack.includes("tank"))) return true;
+      if (haystack.includes("shore") || haystack.includes("ac_input")) return true;
+      if (haystack.includes("temp") || haystack.includes("overheat") || haystack.includes("temperature")) return true;
+      if (haystack.includes("smoke") || haystack.includes("fire") || haystack.includes("leak") || haystack.includes("co2")) return true;
 
       return false;
     }
 
     async function loadAlarmEvents() {
       try {
-        let alarmsFromBackend = [];
-        try {
-          const res = await fetch(`${apiBase}/yachts/${yachtId}/events?limit=200`);
-          if (res.ok) {
-            const events = await res.json();
-            alarmsFromBackend = Array.isArray(events) ? events.filter(isAlarmEvent) : [];
-          }
-        } catch (inner) {
-          console.error("Error loading alarm events from backend", inner);
-        }
+        // Render cached history immediately (so it never "disappears" on refresh)
+        renderAlarmEvents(loadAlarmHistoryLocal());
 
-        // combine backend events with locally logged history
-        const combined = [...alarmsFromBackend, ...sessionAlarmHistory];
-        renderAlarmEvents(combined);
-        setLastAction("Alarm history refreshed");
+        // Also fetch backend events and merge into local cache (dedupe)
+        const res = await fetch(`${apiBase}/yachts/${yachtId}/events?limit=200`);
+        if (!res.ok) throw new Error("Failed to load alarm events");
+        const events = await res.json();
+        const alarms = (events || []).filter(isAlarmEvent).map(ev => ({
+          timestamp: ev.timestamp,
+          type: ev.type,
+          source: ev.source,
+          details: ev.details
+        }));
+
+        const merged = mergeIntoAlarmHistory(alarms);
+        renderAlarmEvents(merged);
       } catch (err) {
         console.error(err);
         setLastAction("Error loading alarm history");
+        // still show whatever is cached
+        renderAlarmEvents(loadAlarmHistoryLocal());
       }
     }
 
@@ -1652,31 +1801,32 @@
       }
 
       alarms
-        .slice(0, 40)
+        .slice(0, 120)
         .forEach(ev => {
           const item = document.createElement("div");
           item.className = "event-item";
 
-          const ts = new Date(ev.timestamp).toLocaleString();
+          const ts = ev.timestamp ? new Date(ev.timestamp).toLocaleString() : "–";
 
           const meta = document.createElement("div");
           meta.className = "event-meta";
 
           const typeLabel = document.createElement("span");
           typeLabel.className = "event-type";
-          typeLabel.textContent = ev.type;
+          typeLabel.textContent = ev.type || "ALARM";
 
-          const alarmTag = document.createElement("span");
-          alarmTag.className = "alarm-tag";
-          alarmTag.textContent = "ALARM";
+          const tag = document.createElement("span");
+          const isClear = String(ev.type || "").toLowerCase().includes("clear");
+          tag.className = "alarm-tag" + (isClear ? " clear" : "");
+          tag.textContent = isClear ? "CLEAR" : "ALARM";
 
           meta.appendChild(typeLabel);
-          meta.appendChild(alarmTag);
-          meta.insertAdjacentText("beforeend", ` · ${ts} · ${ev.source}`);
+          meta.appendChild(tag);
+          meta.insertAdjacentText("beforeend", ` · ${ts} · ${ev.source || "–"}`);
 
           const details = document.createElement("div");
           details.className = "event-details";
-          details.textContent = JSON.stringify(ev.details);
+          details.textContent = JSON.stringify(ev.details || {});
 
           item.appendChild(meta);
           item.appendChild(details);
@@ -1689,10 +1839,10 @@
     async function loadAiLogs() {
       try {
         const res = await fetch(`${apiBase}/yachts/${yachtId}/ai/logs?limit=50`);
-        if (!res.ok) throw new Error("Failed to load AI logs");
-        const logs = await res.json();
-        renderAiLogs(logs);
-        setLastAction("AI logs refreshed");
+          if (!res.ok) throw new Error("Failed to load AI logs");
+          const logs = await res.json();
+          renderAiLogs(logs);
+          setLastAction("AI logs refreshed");
       } catch (err) {
         console.error(err);
         setLastAction("Error loading AI logs");
@@ -1703,7 +1853,7 @@
       if (!aiLogsEl) return;
       aiLogsEl.innerHTML = "";
 
-      (logs || []).forEach(log => {
+      logs.forEach(log => {
         const item = document.createElement("div");
         item.className = "event-item";
 
@@ -1723,7 +1873,7 @@
         aiLogsEl.appendChild(item);
       });
 
-      if (!logs || logs.length === 0) {
+      if (logs.length === 0) {
         const empty = document.createElement("div");
         empty.className = "event-item";
         empty.textContent = "No AI logs yet.";
@@ -1832,10 +1982,7 @@
       yachtId = newYachtId;
       window.history.replaceState({}, "", `?yacht=${encodeURIComponent(yachtId)}`);
 
-      // reset per-yacht alarm state tracking & load stored history
-      lastAlarmStateByDevice = {};
-      loadAlarmHistoryForCurrentYacht();
-
+      // Load meta for pretty name
       try {
         const res = await fetch(`${apiBase}/yachts/${yachtId}/meta`);
         if (res.ok) {
@@ -1857,7 +2004,7 @@
       await loadDevices();
       await loadScenes();
       await loadEvents();
-      await loadAlarmEvents();
+      await loadAlarmEvents();   // will render cached history + merge backend
       await loadAiLogs();
       sendOccupancyToBackend();
       setLastAction(`Switched to yacht ${yachtId}`);
