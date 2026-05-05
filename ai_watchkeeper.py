@@ -15,7 +15,8 @@ from openai import OpenAI
 # ----------------------
 
 BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL", "http://127.0.0.1:8000")
-YACHT_ID = os.getenv("YACHT_ID", "21ft Cabin Cruiser")
+YACHT_ID = os.getenv("YACHT_ID", "marex-21-001")
+CONTROL_PIN = os.getenv("YACHTOS_CONTROL_PIN")
 
 # How often to poll the backend
 POLL_INTERVAL_SECONDS = 5
@@ -40,6 +41,10 @@ bilge_last_forced_by_ai: bool = False               # did AI last control overri
 
 # Sensor latch: device_id -> datetime until which the sensor is treated as True
 sensor_latches: Dict[str, datetime] = {}
+
+
+def control_headers() -> dict:
+    return {"X-Control-PIN": CONTROL_PIN} if CONTROL_PIN else {}
 
 
 def get_sensor_state_with_latch(device_id: str, device: Optional[dict], hold_seconds: int = 60) -> bool:
@@ -82,70 +87,19 @@ async def fetch_snapshot(http: httpx.AsyncClient):
 
 async def send_ai_commands(http: httpx.AsyncClient, payload: dict):
     """
-    APPLY actions directly via /devices/.../state and /scenes/.../activate,
-    instead of posting the whole payload to /ai/commands.
+    Send the full command payload through the backend policy boundary.
     """
-    actions = payload.get("actions", []) or []
-    applied = 0
-    skipped = 0
-    failed = 0
-    errors: List[str] = []
+    url = f"{BACKEND_BASE_URL}/yachts/{YACHT_ID}/ai/commands"
+    resp = await http.post(url, json=payload, headers=control_headers(), timeout=10.0)
+    resp.raise_for_status()
+    result = resp.json()
 
-    for action in actions:
-        a_type = action.get("type")
-
-        if a_type == "set_device_state":
-            device_id = action.get("device_id")
-            if not device_id:
-                skipped += 1
-                continue
-
-            target_state = action.get("target_state")
-            url = f"{BACKEND_BASE_URL}/yachts/{YACHT_ID}/devices/{device_id}/state"
-            body = {
-                "state": target_state,
-                "source": "ai_watchkeeper",
-            }
-            try:
-                resp = await http.post(url, json=body, timeout=5.0)
-                resp.raise_for_status()
-                applied += 1
-            except Exception as e:
-                failed += 1
-                errors.append(f"{device_id}: {e}")
-
-        elif a_type == "activate_scene":
-            scene_id = action.get("scene_id") or action.get("device_id")
-            if not scene_id:
-                skipped += 1
-                continue
-
-            url = f"{BACKEND_BASE_URL}/yachts/{YACHT_ID}/scenes/{scene_id}/activate"
-            body = {"source": "ai_watchkeeper"}
-            try:
-                resp = await http.post(url, json=body, timeout=5.0)
-                resp.raise_for_status()
-                applied += 1
-            except Exception as e:
-                failed += 1
-                errors.append(f"scene {scene_id}: {e}")
-
-        elif a_type == "no_op":
-            skipped += 1
-
-        else:
-            # Unknown action type – ignore
-            skipped += 1
-
-    if failed:
-        # Raise one combined error so loop_once logs it, but AFTER trying all actions
-        raise RuntimeError(f"{failed} actions failed: {', '.join(errors)}")
-
-    # Return a small summary (loop_once just prints it)
+    statuses = [item.get("status") for item in result.get("results", [])]
     return {
-        "applied": applied,
-        "skipped": skipped,
-        "failed": failed,
+        "applied": statuses.count("executed"),
+        "deferred": statuses.count("deferred"),
+        "rejected": statuses.count("rejected"),
+        "raw": result,
     }
 
 

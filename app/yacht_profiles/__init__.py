@@ -56,6 +56,13 @@ def get_hardware_for_yacht(yacht_id: str) -> Dict[str, Any]:
     return profile.get("hardware", {})
 
 
+def iter_known_profiles() -> List[Dict[str, Any]]:
+    """
+    Return profile configs suitable for database seeding.
+    """
+    return list(PROFILES.values())
+
+
 # -------------------------------------------------------------------
 # New helpers used by app/routers/yachts.py
 # -------------------------------------------------------------------

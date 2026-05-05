@@ -33,6 +33,12 @@ class Device(BaseModel):
     ai_control: AiControlLevel = AiControlLevel.LIMITED
     max_runtime_seconds: Optional[int] = None
     requires_human_ack: bool = False
+    control_authority: str = "ai_allowed"
+    control_reason: Optional[str] = None
+    last_changed_at: Optional[datetime] = None
+    last_changed_by: Optional[str] = None
+    current_on_since: Optional[datetime] = None
+    total_runtime_seconds: int = 0
 
 
 class SceneAction(BaseModel):

@@ -2,8 +2,8 @@
 
 DEFAULT_CABIN_CRUISER_20_25FT = {
     "yacht": {
-        "id": "21ft Cabin Cruiser",
-        "name": "21ft Cabin Cruiser #001",
+        "id": "marex-21-001",
+        "name": "Marex Flexi 21 #001",
     },
     "hardware": {
         "buses": [

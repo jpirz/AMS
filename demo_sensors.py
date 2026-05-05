@@ -11,7 +11,8 @@ from datetime import datetime, timezone
 import httpx
 
 BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL", "http://127.0.0.1:8000")
-YACHT_ID = os.getenv("YACHT_ID", "21ft Cabin Cruiser")
+YACHT_ID = os.getenv("YACHT_ID", "marex-21-001")
+CONTROL_PIN = os.getenv("YACHTOS_CONTROL_PIN")
 
 POLL_INTERVAL_SECONDS = 5
 
@@ -25,8 +26,9 @@ async def set_device_state(http: httpx.AsyncClient, device_id: str, state, sourc
         "state": state,
         "source": source,
     }
+    headers = {"X-Control-PIN": CONTROL_PIN} if CONTROL_PIN else {}
     try:
-        resp = await http.post(url, json=body, timeout=5.0)
+        resp = await http.post(url, json=body, headers=headers, timeout=5.0)
         resp.raise_for_status()
     except Exception as e:
         print(f"[demo_sensors] Failed to set {device_id}={state}: {e}")

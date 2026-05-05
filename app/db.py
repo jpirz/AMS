@@ -1,7 +1,8 @@
 import sqlite3
+import os
 from pathlib import Path
 
-DB_PATH = Path("yachtos.db")
+DB_PATH = Path(os.getenv("YACHTOS_DB_PATH", "yachtos.db"))
 
 
 def get_connection() -> sqlite3.Connection:
@@ -29,6 +30,12 @@ def init_db():
         ai_control           TEXT NOT NULL,
         max_runtime_seconds  INTEGER,
         requires_human_ack   INTEGER NOT NULL DEFAULT 0,
+        control_authority    TEXT NOT NULL DEFAULT 'ai_allowed',
+        control_reason       TEXT,
+        last_changed_at      TEXT,
+        last_changed_by      TEXT,
+        current_on_since     TEXT,
+        total_runtime_seconds INTEGER NOT NULL DEFAULT 0,
         PRIMARY KEY (yacht_id, id),
         FOREIGN KEY (yacht_id) REFERENCES yachts(id) ON DELETE CASCADE
     );
@@ -67,10 +74,77 @@ def init_db():
         ai_mode  TEXT NOT NULL,
         FOREIGN KEY (yacht_id) REFERENCES yachts(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS vessel_state (
+        yacht_id   TEXT PRIMARY KEY,
+        mode       TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (yacht_id) REFERENCES yachts(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS ai_logs (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        yacht_id     TEXT NOT NULL,
+        generated_at TEXT NOT NULL,
+        summary      TEXT NOT NULL,
+        actions_json TEXT NOT NULL,
+        mode         TEXT,
+        FOREIGN KEY (yacht_id) REFERENCES yachts(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS ai_occupancy (
+        yacht_id    TEXT PRIMARY KEY,
+        occupancy   TEXT NOT NULL,
+        updated_at  TEXT NOT NULL,
+        FOREIGN KEY (yacht_id) REFERENCES yachts(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS alarms (
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        yacht_id         TEXT NOT NULL,
+        alarm_key        TEXT NOT NULL,
+        device_id        TEXT NOT NULL,
+        name             TEXT NOT NULL,
+        zone             TEXT,
+        severity         TEXT NOT NULL,
+        status           TEXT NOT NULL,
+        state            TEXT,
+        first_raised_at  TEXT NOT NULL,
+        last_changed_at  TEXT NOT NULL,
+        acknowledged_at  TEXT,
+        cleared_at       TEXT,
+        details          TEXT NOT NULL,
+        FOREIGN KEY (yacht_id) REFERENCES yachts(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_events_yacht_id_id
+        ON events(yacht_id, id DESC);
+
+    CREATE INDEX IF NOT EXISTS idx_ai_logs_yacht_id_id
+        ON ai_logs(yacht_id, id DESC);
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_alarms_active_key
+        ON alarms(yacht_id, alarm_key)
+        WHERE status = 'active';
+
+    CREATE INDEX IF NOT EXISTS idx_alarms_yacht_changed
+        ON alarms(yacht_id, last_changed_at DESC);
     """
     conn = get_connection()
     try:
         conn.executescript(schema)
+        _ensure_column(conn, "devices", "control_authority", "TEXT NOT NULL DEFAULT 'ai_allowed'")
+        _ensure_column(conn, "devices", "control_reason", "TEXT")
+        _ensure_column(conn, "devices", "last_changed_at", "TEXT")
+        _ensure_column(conn, "devices", "last_changed_by", "TEXT")
+        _ensure_column(conn, "devices", "current_on_since", "TEXT")
+        _ensure_column(conn, "devices", "total_runtime_seconds", "INTEGER NOT NULL DEFAULT 0")
         conn.commit()
     finally:
         conn.close()
+
+
+def _ensure_column(conn: sqlite3.Connection, table: str, column: str, definition: str) -> None:
+    columns = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+    if column not in columns:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")

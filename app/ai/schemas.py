@@ -1,7 +1,7 @@
 # app/ai/schemas.py
 
 from __future__ import annotations
-from typing import List, Optional, Dict, Literal, Union
+from typing import Any, List, Optional, Dict, Literal, Union
 from pydantic import BaseModel, Field
 from datetime import datetime
 
@@ -77,8 +77,8 @@ class AICommandAction(BaseModel):
     device_id: Optional[str] = None
     scene_id: Optional[str] = None
     target_state: Optional[StateValue] = None
-    priority: Literal["info", "normal", "critical"] = "normal"
-    constraints: Optional[AIActionConstraints] = None
+    priority: Union[Literal["info", "low", "normal", "high", "critical"], int] = "normal"
+    constraints: Optional[Dict[str, Any]] = None
     reason: Optional[str] = None
 
 
