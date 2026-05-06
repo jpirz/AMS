@@ -1,3 +1,7 @@
+if (window.location.protocol === "file:") {
+  window.location.replace("http://127.0.0.1:8000/ui/");
+}
+
 const apiBase = "";
 
     let yachtId = null;
@@ -854,7 +858,7 @@ const apiBase = "";
 
     async function loadScenes() {
       try {
-        const res = await fetch(`${apiBase}/yachts/${yachtId}/scenes`);
+        const res = await fetch(`${apiBase}/yachts/${yachtId}/scenes/`);
         if (!res.ok) throw new Error("Failed to load scenes");
         const scenes = await res.json();
         renderScenes(scenes);
@@ -912,7 +916,7 @@ const apiBase = "";
 
     async function loadEvents() {
       try {
-        const res = await fetch(`${apiBase}/yachts/${yachtId}/events?limit=50`);
+        const res = await fetch(`${apiBase}/yachts/${yachtId}/events/?limit=50`);
         if (!res.ok) throw new Error("Failed to load events");
         const events = await res.json();
         renderEvents(events);
