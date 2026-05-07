@@ -35,6 +35,9 @@
             <button id="bgToggleBtn" class="small-btn">BG: Default</button>
             <!-- 🔇 NEW: mute alarm toggle -->
             <button id="muteAlarmBtn" class="small-btn">Alarm: Sound ON</button>
+            <button id="notifyBtn" class="small-btn">Notify: Off</button>
+            <button id="loginBtn" class="small-btn">Login</button>
+            <button id="exportBtn" class="small-btn">Export</button>
           </div>
         </div>
       </div>
@@ -84,6 +87,13 @@
             </div>
             <div class="card-body">
               <div id="simulatorScenarios" class="scene-row"></div>
+              <div id="hardwareHealth" class="events-list"></div>
+              <div class="sensor-history-panel">
+                <div class="event-meta ai-section-title">Sensor History</div>
+                <select id="historySensorSelect" class="boat-selector"></select>
+                <canvas id="sensorHistoryChart" height="130"></canvas>
+                <div id="sensorHistoryDetails" class="event-details"></div>
+              </div>
               <div id="sensorContainer" class="sensors-list"></div>
             </div>
           </div>
@@ -152,6 +162,18 @@
               </div>
             </div>
             <div class="card-body">
+              <div class="event-filter-row">
+                <input id="eventFilterText" class="filter-input" placeholder="Search events" />
+                <select id="eventTypeFilter" class="filter-input">
+                  <option value="">All types</option>
+                  <option value="device_change">Device</option>
+                  <option value="scene_activation">Scene</option>
+                  <option value="safety_rules_applied">Safety</option>
+                  <option value="ai_command">AI</option>
+                  <option value="natural_language_command">NL command</option>
+                </select>
+                <input id="eventDeviceFilter" class="filter-input" placeholder="Device ID" />
+              </div>
               <div id="alarmsList" class="events-list"></div>
             </div>
           </div>

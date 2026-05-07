@@ -371,6 +371,85 @@ class YachtOSApiTests(unittest.TestCase):
             else:
                 os.environ["YACHTOS_CONTROL_PIN"] = old_pin
 
+    def test_role_login_and_admin_export(self):
+        from app.services.core import auth_service
+
+        old_password = os.environ.get("YACHTOS_ADMIN_PASSWORD")
+        os.environ["YACHTOS_ADMIN_PASSWORD"] = "secret-test-password"
+        try:
+            auth_service.seed_env_users()
+            login = self.client.post(
+                "/auth/login",
+                json={"username": "admin", "password": "secret-test-password"},
+            )
+            self.assertEqual(login.status_code, 200)
+            token = login.json()["token"]
+
+            me = self.client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
+            self.assertEqual(me.status_code, 200)
+            self.assertEqual(me.json()["role"], "admin")
+
+            export = self.client.get(
+                f"/yachts/{self.yacht_id}/export/json",
+                headers={"Authorization": f"Bearer {token}"},
+            )
+            self.assertEqual(export.status_code, 200)
+            self.assertIn("devices", export.json()["tables"])
+        finally:
+            from app.db import get_connection
+
+            conn = get_connection()
+            try:
+                conn.execute("DELETE FROM auth_sessions")
+                conn.execute("DELETE FROM users WHERE username = 'admin'")
+                conn.commit()
+            finally:
+                conn.close()
+            if old_password is None:
+                os.environ.pop("YACHTOS_ADMIN_PASSWORD", None)
+            else:
+                os.environ["YACHTOS_ADMIN_PASSWORD"] = old_password
+
+    def test_sensor_history_hardware_health_and_event_filters(self):
+        sensor = self.client.post(
+            f"/yachts/{self.yacht_id}/devices/battery_voltage_house/state",
+            json={"state": 12.2, "source": "history_test"},
+        )
+        self.assertEqual(sensor.status_code, 200)
+        sensor = self.client.post(
+            f"/yachts/{self.yacht_id}/devices/battery_voltage_house/state",
+            json={"state": 12.1, "source": "history_test"},
+        )
+        self.assertEqual(sensor.status_code, 200)
+
+        history = self.client.get(
+            f"/yachts/{self.yacht_id}/history/sensors/battery_voltage_house?limit=10"
+        )
+        self.assertEqual(history.status_code, 200)
+        self.assertGreaterEqual(len(history.json()), 2)
+        self.assertEqual(history.json()[0]["device_id"], "battery_voltage_house")
+
+        device = self.client.post(
+            f"/yachts/{self.yacht_id}/devices/courtesy_lights/state",
+            json={"state": True, "source": "hardware_test"},
+        )
+        self.assertEqual(device.status_code, 200)
+
+        hardware = self.client.get(f"/yachts/{self.yacht_id}/hardware/health")
+        self.assertEqual(hardware.status_code, 200)
+        self.assertGreaterEqual(hardware.json()["checked_points"], 1)
+
+        filtered = self.client.get(
+            f"/yachts/{self.yacht_id}/events/?type=device_change&device_id=battery_voltage_house&limit=20"
+        )
+        self.assertEqual(filtered.status_code, 200)
+        self.assertTrue(
+            all(event["type"] == "device_change" for event in filtered.json())
+        )
+        self.assertTrue(
+            any(event["details"]["device_id"] == "battery_voltage_house" for event in filtered.json())
+        )
+
     def test_mode_endpoint_persists_and_enforces_navigation_lights(self):
         mode = self.client.post(
             f"/yachts/{self.yacht_id}/mode/",

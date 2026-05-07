@@ -6,12 +6,22 @@ from app.db import get_connection
 from app.models import Device, DeviceType
 from app.services.event_service_sql import EventLogger
 from app.hardware.manager import HardwareManager
+from app.services.hardware_status_service import HardwareStatusService
+from app.services.sensor_history_service import SensorHistoryService
 
 
 class DeviceService:
-    def __init__(self, hw_manager: HardwareManager, event_logger: EventLogger):
+    def __init__(
+        self,
+        hw_manager: HardwareManager,
+        event_logger: EventLogger,
+        sensor_history: SensorHistoryService | None = None,
+        hardware_status: HardwareStatusService | None = None,
+    ):
         self.hw_manager = hw_manager
         self.events = event_logger
+        self.sensor_history = sensor_history
+        self.hardware_status = hardware_status
 
     def list_devices(self, yacht_id: str) -> List[Device]:
         conn = get_connection()
@@ -100,7 +110,20 @@ class DeviceService:
 
         if device.type != DeviceType.SENSOR and device.hw_id and isinstance(state, bool):
             hw = self.hw_manager.get_io(yacht_id)
-            hw.set_output(device.hw_id, state)
+            try:
+                hw.set_output(device.hw_id, state)
+                if self.hardware_status:
+                    self.hardware_status.record_ok(yacht_id, device.hw_id, state)
+            except Exception as exc:
+                if self.hardware_status:
+                    self.hardware_status.record_error(yacht_id, device.hw_id, str(exc), state)
+                self.events.log(
+                    yacht_id=yacht_id,
+                    source=source,
+                    type="hardware_write_failed",
+                    details={"device_id": device_id, "hw_id": device.hw_id, "error": str(exc)},
+                )
+                raise
 
         now = datetime.now(timezone.utc)
         last_changed_at = device.last_changed_at
@@ -156,6 +179,9 @@ class DeviceService:
             type="device_change",
             details={"device_id": device_id, "new_state": state},
         )
+
+        if device.type == DeviceType.SENSOR and self.sensor_history:
+            self.sensor_history.record(yacht_id, device_id, state, source)
 
         return device
 

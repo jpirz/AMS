@@ -6,9 +6,10 @@ from fastapi.staticfiles import StaticFiles
 
 from app.db import init_db
 from app.services.config_loader_sql import seed_known_yacht_profiles
+from app.services.core import auth_service
 
 # SQLite-backed API modules
-from app.api import alarms, devices, events, mode, provision, scenes, simulator, system
+from app.api import alarms, auth, devices, events, export, hardware, history, mode, provision, scenes, simulator, system
 
 from app.ai.router import router as ai_router
 from app.routers import yachts
@@ -20,6 +21,7 @@ from app.routers import yachts
 # Initialize SQLite schema
 init_db()
 seed_known_yacht_profiles()
+auth_service.seed_env_users()
 
 app = FastAPI(title="YachtOS Backend (SQLite + Multi-Yacht)")
 
@@ -30,6 +32,10 @@ app.include_router(ai_router)        # /yachts/{yacht_id}/ai/...
 app.include_router(alarms.router)    # /yachts/{yacht_id}/alarms
 app.include_router(mode.router)      # /yachts/{yacht_id}/mode
 app.include_router(simulator.router) # /yachts/{yacht_id}/simulator
+app.include_router(history.router)   # /yachts/{yacht_id}/history
+app.include_router(hardware.router)  # /yachts/{yacht_id}/hardware
+app.include_router(export.router)    # /yachts/{yacht_id}/export
+app.include_router(auth.router)      # /auth
 
 # Utility routers
 app.include_router(events.router)
@@ -50,12 +56,17 @@ async def root():
         "ui": "/ui",
         "endpoints": [
             "/provision/yacht",
+            "/auth/login",
             "/yachts",
             "/yachts/{yacht_id}/meta",
             "/yachts/{yacht_id}/devices",
             "/yachts/{yacht_id}/scenes",
             "/yachts/{yacht_id}/events",
+            "/yachts/{yacht_id}/events?type=device_change&device_id=...",
             "/yachts/{yacht_id}/alarms/active",
+            "/yachts/{yacht_id}/history/sensors/{device_id}",
+            "/yachts/{yacht_id}/hardware/health",
+            "/yachts/{yacht_id}/export/json",
             "/yachts/{yacht_id}/mode",
             "/yachts/{yacht_id}/simulator/scenarios",
             "/yachts/{yacht_id}/system/ai-mode",

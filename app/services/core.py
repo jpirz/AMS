@@ -5,14 +5,25 @@ from app.services.system_state_sql import SystemState
 from app.services.ai_state_sql import AIStateService
 from app.services.ai_insights_service import AIInsightsService
 from app.services.alarm_service_sql import AlarmService
+from app.services.auth_service import AuthService
+from app.services.hardware_status_service import HardwareStatusService
 from app.services.safety_service import SafetyService
+from app.services.sensor_history_service import SensorHistoryService
 from app.services.simulator_service import SimulatorService
 from app.services.vessel_state_sql import VesselStateService
 from app.hardware.manager import HardwareManager
 
 event_logger = EventLogger()
+auth_service = AuthService()
 hw_manager = HardwareManager()
-device_service = DeviceService(hw_manager=hw_manager, event_logger=event_logger)
+sensor_history = SensorHistoryService()
+hardware_status = HardwareStatusService()
+device_service = DeviceService(
+    hw_manager=hw_manager,
+    event_logger=event_logger,
+    sensor_history=sensor_history,
+    hardware_status=hardware_status,
+)
 scene_service = SceneService(device_service=device_service, event_logger=event_logger)
 system_state = SystemState()
 ai_state = AIStateService()

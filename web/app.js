@@ -27,12 +27,22 @@ const apiBase = "";
     const themeToggleBtn   = document.getElementById("themeToggleBtn");
     const bgToggleBtn      = document.getElementById("bgToggleBtn");
     const muteAlarmBtn     = document.getElementById("muteAlarmBtn");
+    const notifyBtn        = document.getElementById("notifyBtn");
+    const loginBtn         = document.getElementById("loginBtn");
+    const exportBtn        = document.getElementById("exportBtn");
     const alarmBanner      = document.getElementById("alarmBanner");
     const alarmBannerText  = document.getElementById("alarmBannerText");
     const yachtTitleEl     = document.getElementById("yachtTitle");
     const yachtNameEl      = document.getElementById("yachtName");
     const yachtSelectEl    = document.getElementById("yachtSelect");
     const simulatorScenariosEl = document.getElementById("simulatorScenarios");
+    const hardwareHealthEl = document.getElementById("hardwareHealth");
+    const historySensorSelect = document.getElementById("historySensorSelect");
+    const sensorHistoryChart = document.getElementById("sensorHistoryChart");
+    const sensorHistoryDetails = document.getElementById("sensorHistoryDetails");
+    const eventFilterText = document.getElementById("eventFilterText");
+    const eventTypeFilter = document.getElementById("eventTypeFilter");
+    const eventDeviceFilter = document.getElementById("eventDeviceFilter");
 
     const aiLogsEl         = document.getElementById("aiLogs");
     const aiStatusSummaryEl = document.getElementById("aiStatusSummary");
@@ -45,6 +55,10 @@ const apiBase = "";
     const aiChatSendBtn    = document.getElementById("aiChatSendBtn");
 
     const occupancyLabel   = document.getElementById("occupancyLabel");
+    let authToken = localStorage.getItem("ams_auth_token") || "";
+    let authUser = null;
+    let notifyEnabled = localStorage.getItem("ams_notify_enabled") === "1";
+    let lastNotifiedAlarmKey = "";
 
     document.getElementById("apiBase").textContent  = window.location.origin;
 
@@ -52,6 +66,7 @@ const apiBase = "";
       const out = { ...headers };
       const pin = localStorage.getItem("ams_control_pin");
       if (pin) out["X-Control-PIN"] = pin;
+      if (authToken) out.Authorization = `Bearer ${authToken}`;
       return out;
     }
 
@@ -64,6 +79,15 @@ const apiBase = "";
       let res = await fetch(url, request);
       if (res.status !== 401) return res;
 
+      const loginOk = await promptLogin();
+      if (loginOk) {
+        res = await fetch(url, {
+          ...options,
+          headers: controlHeaders(options.headers || {})
+        });
+        if (res.status !== 401) return res;
+      }
+
       const pin = window.prompt("Control PIN required");
       if (!pin) return res;
 
@@ -73,6 +97,126 @@ const apiBase = "";
         headers: controlHeaders(options.headers || {})
       });
       return res;
+    }
+
+    function updateLoginButton() {
+      if (!loginBtn) return;
+      loginBtn.textContent = authUser ? `${authUser.role}: ${authUser.username}` : "Login";
+    }
+
+    async function promptLogin() {
+      if (!loginBtn) return false;
+      const username = window.prompt("Username");
+      if (!username) return false;
+      const password = window.prompt("Password");
+      if (!password) return false;
+
+      try {
+        const res = await fetch(`${apiBase}/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password })
+        });
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        authToken = data.token;
+        authUser = data.user;
+        localStorage.setItem("ams_auth_token", authToken);
+        updateLoginButton();
+        setLastAction(`Logged in as ${authUser.username}`);
+        return true;
+      } catch (err) {
+        console.error(err);
+        setLastAction("Login failed");
+        return false;
+      }
+    }
+
+    async function loadCurrentUser() {
+      if (!authToken) {
+        updateLoginButton();
+        return;
+      }
+      try {
+        const res = await fetch(`${apiBase}/auth/me`, { headers: controlHeaders() });
+        if (!res.ok) throw new Error("Session expired");
+        authUser = await res.json();
+      } catch (err) {
+        authToken = "";
+        authUser = null;
+        localStorage.removeItem("ams_auth_token");
+      }
+      updateLoginButton();
+    }
+
+    if (loginBtn) {
+      loginBtn.addEventListener("click", async () => {
+        if (authUser) {
+          if (!window.confirm("Log out?")) return;
+          await fetch(`${apiBase}/auth/logout`, { method: "POST", headers: controlHeaders() }).catch(() => {});
+          authToken = "";
+          authUser = null;
+          localStorage.removeItem("ams_auth_token");
+          updateLoginButton();
+          setLastAction("Logged out");
+          return;
+        }
+        await promptLogin();
+      });
+    }
+
+    function updateNotifyButton() {
+      if (!notifyBtn) return;
+      notifyBtn.textContent = notifyEnabled ? "Notify: On" : "Notify: Off";
+    }
+
+    async function enableNotifications() {
+      if (!("Notification" in window)) {
+        setLastAction("Browser notifications unsupported");
+        return;
+      }
+      const permission = await Notification.requestPermission();
+      notifyEnabled = permission === "granted";
+      localStorage.setItem("ams_notify_enabled", notifyEnabled ? "1" : "0");
+      updateNotifyButton();
+    }
+
+    if (notifyBtn) {
+      notifyBtn.addEventListener("click", async () => {
+        if (notifyEnabled) {
+          notifyEnabled = false;
+          localStorage.setItem("ams_notify_enabled", "0");
+          updateNotifyButton();
+        } else {
+          await enableNotifications();
+        }
+      });
+    }
+
+    updateNotifyButton();
+
+    if (exportBtn) {
+      exportBtn.addEventListener("click", async () => {
+        if (!yachtId) return;
+        try {
+          const res = await controlFetch(`${apiBase}/yachts/${yachtId}/export/json`);
+          if (!res.ok) throw new Error(await res.text());
+          const data = await res.json();
+          const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = `${yachtId}-export.json`;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          URL.revokeObjectURL(url);
+          setLastAction("Export downloaded");
+        } catch (err) {
+          console.error(err);
+          setLastAction("Export failed");
+        }
+      });
     }
 
     /* THEME */
@@ -365,6 +509,12 @@ const apiBase = "";
       aiChatSendBtn.addEventListener("click", sendAiChat);
     }
 
+    [eventFilterText, eventTypeFilter, eventDeviceFilter].forEach(el => {
+      if (!el) return;
+      el.addEventListener("change", () => yachtId && loadAlarmEvents());
+      el.addEventListener("input", () => yachtId && loadAlarmEvents());
+    });
+
     if (aiChatInput) {
       aiChatInput.addEventListener("keydown", (ev) => {
         if (ev.key === "Enter" && (ev.ctrlKey || ev.metaKey)) {
@@ -465,10 +615,13 @@ const apiBase = "";
         const devices = await res.json();
         renderDevices(devices);
         renderSensors(devices);
+        updateHistorySensorSelect(devices);
         updateSummary(devices);
 
         const active = await loadActiveAlarms();
         updateAudibleAlarm(active.length);
+        await loadHardwareHealth();
+        await loadSelectedSensorHistory();
 
         setLastAction("Devices refreshed");
       } catch (err) {
@@ -652,6 +805,97 @@ const apiBase = "";
         });
     }
 
+    function updateHistorySensorSelect(devices) {
+      if (!historySensorSelect) return;
+      const sensors = devices.filter(d => d.type === "sensor");
+      const previous = historySensorSelect.value || "battery_voltage_house";
+      historySensorSelect.innerHTML = "";
+      sensors.forEach(dev => {
+        const option = document.createElement("option");
+        option.value = dev.id;
+        option.textContent = `${dev.name} (${dev.id})`;
+        if (dev.id === previous) option.selected = true;
+        historySensorSelect.appendChild(option);
+      });
+      if (!historySensorSelect.value && sensors.length) historySensorSelect.value = sensors[0].id;
+    }
+
+    if (historySensorSelect) {
+      historySensorSelect.addEventListener("change", loadSelectedSensorHistory);
+    }
+
+    async function loadSelectedSensorHistory() {
+      if (!historySensorSelect || !historySensorSelect.value || !yachtId) return;
+      try {
+        const res = await fetch(`${apiBase}/yachts/${yachtId}/history/sensors/${historySensorSelect.value}?limit=80`);
+        if (!res.ok) throw new Error("Failed to load sensor history");
+        const history = await res.json();
+        renderSensorHistory(history.reverse());
+      } catch (err) {
+        console.error(err);
+        if (sensorHistoryDetails) sensorHistoryDetails.textContent = "Sensor history unavailable.";
+      }
+    }
+
+    function renderSensorHistory(history) {
+      if (!sensorHistoryChart || !sensorHistoryDetails) return;
+      const ctx = sensorHistoryChart.getContext("2d");
+      const width = sensorHistoryChart.clientWidth || 500;
+      const height = Number(sensorHistoryChart.getAttribute("height")) || 130;
+      sensorHistoryChart.width = width;
+      sensorHistoryChart.height = height;
+      ctx.clearRect(0, 0, width, height);
+      ctx.strokeStyle = "#1f2937";
+      ctx.strokeRect(0, 0, width, height);
+
+      const numeric = history
+        .map(row => ({ ...row, value: Number(row.state) }))
+        .filter(row => Number.isFinite(row.value));
+
+      if (numeric.length < 2) {
+        sensorHistoryDetails.textContent = history.length
+          ? `Latest: ${String(history[history.length - 1].state)}`
+          : "No history yet. Sensor changes will appear here.";
+        return;
+      }
+
+      const values = numeric.map(row => row.value);
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      const spread = max - min || 1;
+      ctx.strokeStyle = "#38bdf8";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      numeric.forEach((row, index) => {
+        const x = (index / Math.max(numeric.length - 1, 1)) * (width - 10) + 5;
+        const y = height - 8 - ((row.value - min) / spread) * (height - 16);
+        if (index === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+
+      const latest = numeric[numeric.length - 1];
+      sensorHistoryDetails.textContent =
+        `${numeric[0].device_id}: latest ${latest.value} | min ${min} | max ${max} | samples ${numeric.length}`;
+    }
+
+    async function loadHardwareHealth() {
+      if (!hardwareHealthEl || !yachtId) return;
+      try {
+        const res = await fetch(`${apiBase}/yachts/${yachtId}/hardware/health`);
+        if (!res.ok) throw new Error("Failed to load hardware health");
+        const health = await res.json();
+        hardwareHealthEl.innerHTML = "";
+        const item = document.createElement("div");
+        item.className = "event-item ai-panel";
+        item.textContent = `Hardware: ${health.status} | checked points: ${health.checked_points}`;
+        hardwareHealthEl.appendChild(item);
+      } catch (err) {
+        console.error(err);
+        hardwareHealthEl.textContent = "Hardware health unavailable.";
+      }
+    }
+
     async function setDeviceState(deviceId, newState) {
       try {
         const res = await controlFetch(`${apiBase}/yachts/${yachtId}/devices/${deviceId}/state`, {
@@ -723,6 +967,7 @@ const apiBase = "";
         if (!res.ok) throw new Error("Failed to load active alarms");
         const alarms = await res.json();
         updateAlarmBannerFromAlarms(alarms);
+        maybeNotifyAlarms(alarms);
         return alarms;
       } catch (err) {
         console.error(err);
@@ -743,6 +988,22 @@ const apiBase = "";
 
       alarmBanner.classList.add("alarm");
       alarmBannerText.textContent = alarms.map(a => a.name || a.device_id).join(" Â· ");
+    }
+
+    function maybeNotifyAlarms(alarms) {
+      if (!notifyEnabled || !("Notification" in window) || Notification.permission !== "granted") return;
+      const active = alarms || [];
+      if (!active.length) {
+        lastNotifiedAlarmKey = "";
+        return;
+      }
+      const key = active.map(a => `${a.device_id}:${a.status}:${a.last_changed_at}`).join("|");
+      if (key === lastNotifiedAlarmKey) return;
+      lastNotifiedAlarmKey = key;
+      const critical = active.filter(a => a.severity === "critical");
+      const title = critical.length ? "Critical yacht alarm" : "Yacht alarm";
+      const body = active.map(a => `${a.name || a.device_id} (${a.severity})`).join(", ");
+      new Notification(title, { body });
     }
 
     async function clearAlarmSensors() {
@@ -951,6 +1212,10 @@ const apiBase = "";
 
     async function loadAlarmEvents() {
       try {
+        if (hasEventFilters()) {
+          await loadFilteredEventsIntoAlarmPage();
+          return;
+        }
         const res = await fetch(`${apiBase}/yachts/${yachtId}/alarms/history?limit=200`);
         if (!res.ok) throw new Error("Failed to load alarm events");
         const alarms = await res.json();
@@ -960,6 +1225,24 @@ const apiBase = "";
         setLastAction("Error loading alarm history");
         renderAlarmEvents([]);
       }
+    }
+
+    function hasEventFilters() {
+      return Boolean(
+        (eventFilterText && eventFilterText.value.trim()) ||
+        (eventTypeFilter && eventTypeFilter.value) ||
+        (eventDeviceFilter && eventDeviceFilter.value.trim())
+      );
+    }
+
+    async function loadFilteredEventsIntoAlarmPage() {
+      const params = new URLSearchParams({ limit: "200" });
+      if (eventFilterText && eventFilterText.value.trim()) params.set("q", eventFilterText.value.trim());
+      if (eventTypeFilter && eventTypeFilter.value) params.set("type", eventTypeFilter.value);
+      if (eventDeviceFilter && eventDeviceFilter.value.trim()) params.set("device_id", eventDeviceFilter.value.trim());
+      const res = await fetch(`${apiBase}/yachts/${yachtId}/events/?${params.toString()}`);
+      if (!res.ok) throw new Error("Failed to load filtered events");
+      renderAlarmEvents(await res.json());
     }
 
     function renderAlarmEvents(alarms) {
@@ -1212,6 +1495,7 @@ const apiBase = "";
 
     async function approveAiSuggestion(suggestionId) {
       try {
+        if (!window.confirm(`Approve AI suggestion ${suggestionId}?`)) return;
         const res = await controlFetch(`${apiBase}/yachts/${yachtId}/ai/suggestions/${encodeURIComponent(suggestionId)}/approve`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1349,6 +1633,25 @@ const apiBase = "";
     }
 
     async function sendNaturalLanguageControl(text) {
+      const previewRes = await controlFetch(`${apiBase}/yachts/${yachtId}/ai/nl-command`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text, source: "web_ui", execute: false })
+      });
+      if (!previewRes.ok) {
+        const errText = await previewRes.text();
+        throw new Error(errText || "Failed to preview natural language command");
+      }
+      const preview = await previewRes.json();
+      const commandText = (preview.translated_commands || [])
+        .map(cmd => JSON.stringify(cmd))
+        .join("\n");
+      const confirmed = window.confirm(`${preview.reply || "Run command?"}\n\n${commandText || "No command details."}`);
+      if (!confirmed) {
+        addChatMessage("AI Command", "Command preview cancelled.");
+        return;
+      }
+
       const res = await controlFetch(`${apiBase}/yachts/${yachtId}/ai/nl-command`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

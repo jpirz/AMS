@@ -99,6 +99,43 @@ def init_db():
         FOREIGN KEY (yacht_id) REFERENCES yachts(id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS users (
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        username      TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL,
+        role          TEXT NOT NULL,
+        created_at    TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS auth_sessions (
+        token      TEXT PRIMARY KEY,
+        user_id    INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        expires_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS sensor_history (
+        id        INTEGER PRIMARY KEY AUTOINCREMENT,
+        yacht_id  TEXT NOT NULL,
+        device_id TEXT NOT NULL,
+        timestamp TEXT NOT NULL,
+        state     TEXT NOT NULL,
+        source    TEXT NOT NULL,
+        FOREIGN KEY (yacht_id, device_id) REFERENCES devices(yacht_id, id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS hardware_status (
+        yacht_id       TEXT NOT NULL,
+        hw_id          TEXT NOT NULL,
+        status         TEXT NOT NULL,
+        last_checked_at TEXT NOT NULL,
+        last_error     TEXT,
+        last_value     TEXT,
+        PRIMARY KEY (yacht_id, hw_id),
+        FOREIGN KEY (yacht_id) REFERENCES yachts(id) ON DELETE CASCADE
+    );
+
     CREATE TABLE IF NOT EXISTS alarms (
         id              INTEGER PRIMARY KEY AUTOINCREMENT,
         yacht_id         TEXT NOT NULL,
@@ -122,6 +159,12 @@ def init_db():
 
     CREATE INDEX IF NOT EXISTS idx_ai_logs_yacht_id_id
         ON ai_logs(yacht_id, id DESC);
+
+    CREATE INDEX IF NOT EXISTS idx_sensor_history_yacht_device_id
+        ON sensor_history(yacht_id, device_id, id DESC);
+
+    CREATE INDEX IF NOT EXISTS idx_sessions_user_id
+        ON auth_sessions(user_id);
 
     CREATE UNIQUE INDEX IF NOT EXISTS idx_alarms_active_key
         ON alarms(yacht_id, alarm_key)
